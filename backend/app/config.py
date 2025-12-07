@@ -33,9 +33,16 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: list[str] = [
         "http://localhost:3000",
-        "http://localhost:8000",
-        "https://codedojo-se9d.onrender.com",
+        "http://localhost:8000"
     ]
+    
+    def get_cors_origins(self) -> list[str]:
+        """Get CORS origins, adding the Render URL if in production."""
+        origins = self.cors_origins.copy()
+        render_url = os.getenv("RENDER_EXTERNAL_URL")
+        if render_url and render_url not in origins:
+            origins.append(render_url)
+        return origins
 
     class Config:
         """Pydantic config."""
