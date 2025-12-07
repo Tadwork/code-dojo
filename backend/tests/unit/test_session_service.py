@@ -53,6 +53,8 @@ class TestSessionService:
             assert mock_db.add.called
             assert mock_db.commit.called
             assert mock_db.refresh.called
+            assert result.title == "Test Session"
+            assert result.language == "python"
 
     @pytest.mark.asyncio
     async def test_get_session_by_code_found(self):
@@ -64,7 +66,7 @@ class TestSessionService:
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = mock_session
 
-        with patch("app.services.session_service.select") as mock_select:
+        with patch("app.services.session_service.select"):
             mock_db.execute = AsyncMock(return_value=mock_result)
             
             result = await SessionService.get_session_by_code(mock_db, "TEST1234")

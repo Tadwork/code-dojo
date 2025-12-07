@@ -1,6 +1,5 @@
 """Unit tests for Session model."""
 
-import pytest
 from datetime import datetime
 from app.models.session import Session
 

@@ -54,15 +54,15 @@ def main():
     generate_openapi_json(json_path)
     generate_openapi_yaml(yaml_path)
     
-    print(f"\n📄 OpenAPI specifications available at:")
+    print("\n📄 OpenAPI specifications available at:")
     print(f"   - {json_path}")
     if yaml:
         print(f"   - {yaml_path}")
-    print(f"\n🌐 Also accessible via API:")
-    print(f"   - http://localhost:8000/api/openapi.json")
-    print(f"   - http://localhost:8000/api/openapi.yaml")
-    print(f"   - http://localhost:8000/docs (Interactive Swagger UI)")
-    print(f"   - http://localhost:8000/redoc (ReDoc documentation)")
+    print("\n🌐 Also accessible via API:")
+    print("   - http://localhost:8000/api/openapi.json")
+    print("   - http://localhost:8000/api/openapi.yaml")
+    print("   - http://localhost:8000/docs (Interactive Swagger UI)")
+    print("   - http://localhost:8000/redoc (ReDoc documentation)")
 
 
 if __name__ == "__main__":

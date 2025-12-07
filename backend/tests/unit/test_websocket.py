@@ -1,11 +1,10 @@
 """Unit tests for WebSocket routes."""
 
 import pytest
-import json
-from unittest.mock import AsyncMock, MagicMock, patch
-from fastapi import WebSocket, WebSocketDisconnect
+from unittest.mock import AsyncMock
+from fastapi import WebSocket
 
-from app.routes.websocket import ConnectionManager, manager
+from app.routes.websocket import ConnectionManager
 
 
 class TestConnectionManager:

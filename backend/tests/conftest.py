@@ -6,8 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 from sqlalchemy.orm import declarative_base
 
 from app.main import app
-from app.config import settings
-
 # Test database engine
 test_engine = create_async_engine(
     "sqlite+aiosqlite:///:memory:",

@@ -1,7 +1,6 @@
 """Application configuration."""
 
 import os
-from typing import Optional
 
 try:
     from pydantic_settings import BaseSettings
