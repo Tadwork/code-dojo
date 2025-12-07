@@ -18,11 +18,13 @@ RUN npm run build
 FROM python:3.10-slim AS backend-builder
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies (including PostgreSQL development files for asyncpg)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
     curl \
+    postgresql-client \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv
@@ -31,14 +33,11 @@ RUN pip install --no-cache-dir uv
 # Copy backend files
 COPY backend/pyproject.toml backend/uv.lock* ./
 
-# Install dependencies
-RUN uv sync --frozen || uv sync
+# Install dependencies with uv
+RUN uv sync --frozen --no-dev
 
 # Copy backend source
 COPY backend/ ./
-
-# Run backend tests (comment out if tests are not ready)
-# RUN uv run pytest --cov=app --cov-fail-under=80 || exit 1
 
 # Stage 3: Production image
 FROM python:3.10-slim
@@ -49,12 +48,13 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     curl \
     postgresql-client \
+    libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv
 RUN pip install --no-cache-dir uv
 
-# Copy backend from builder
+# Copy the entire app directory from builder (includes .venv with installed packages)
 COPY --from=backend-builder /app /app
 
 # Copy frontend build from builder
@@ -63,7 +63,6 @@ COPY --from=frontend-builder /app/frontend/build /app/static
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PORT=8000
-ENV PATH="/root/.local/bin:${PATH}"
 
 # Expose port
 EXPOSE 8000
@@ -72,6 +71,6 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:8000/api/health || exit 1
 
-# Run the application
+# Run the application using uv
 CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
