@@ -13,6 +13,10 @@ class TestSettings:
 
     def test_default_environment(self):
         """Test default environment."""
+        # Ensure ENVIRONMENT is not set so defaults are used
+        import os
+
+        os.environ.pop("ENVIRONMENT", None)
         test_settings = Settings()
         assert test_settings.environment == "development"
 

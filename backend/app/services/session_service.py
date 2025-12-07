@@ -1,6 +1,7 @@
 """Session management service."""
 
 import secrets
+import string
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -14,7 +15,8 @@ class SessionService:
     @staticmethod
     def generate_session_code() -> str:
         """Generate a unique 8-character session code."""
-        return secrets.token_urlsafe(6)[:8].upper()
+        alphabet = string.ascii_uppercase + string.digits
+        return "".join(secrets.choice(alphabet) for _ in range(8))
 
     @staticmethod
     async def create_session(

@@ -29,20 +29,7 @@ class TestSessionService:
     async def test_create_session(self):
         """Test creating a session."""
         mock_db = AsyncMock(spec=AsyncSession)
-        mock_session = MagicMock(spec=Session)
-        mock_session.session_code = "TEST1234"
-        mock_session.title = "Test Session"
-        mock_session.language = "python"
-        mock_session.code = ""
-        mock_session.id = "test-id"
-        mock_session.created_at = None
-        mock_session.active_users = 0
-
-        with (
-            patch.object(SessionService, "get_session_by_code", return_value=None),
-            patch.object(Session, "__init__", return_value=None) as mock_init,
-        ):
-            mock_init.return_value = None
+        with patch.object(SessionService, "get_session_by_code", return_value=None):
             mock_db.add = MagicMock()
             mock_db.commit = AsyncMock()
             mock_db.refresh = AsyncMock()
@@ -54,6 +41,7 @@ class TestSessionService:
             assert mock_db.add.called
             assert mock_db.commit.called
             assert mock_db.refresh.called
+            assert isinstance(result, Session)
             assert result.title == "Test Session"
             assert result.language == "python"
 
