@@ -83,11 +83,40 @@ cd frontend
 npm test -- --coverage --watchAll=false
 ```
 
-### Docker Build
+### Docker Development Setup
+
+For local development with Docker Compose (includes PostgreSQL):
+
+```bash
+# Start all services (PostgreSQL, backend, frontend)
+docker-compose up
+
+# Or run in detached mode
+docker-compose up -d
+
+# Stop all services
+docker-compose down
+
+# Stop and remove volumes (clears database)
+docker-compose down -v
+```
+
+The services will be available at:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- PostgreSQL: localhost:5432
+
+### Docker Production Build
+
+For production deployment as a single Docker image:
 
 ```bash
 docker build -t coddojo:latest .
-docker run -p 8000:8000 coddojo:latest
+docker run -p 8000:8000 \
+  -e DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/dbname \
+  -e ENVIRONMENT=production \
+  -e SECRET_KEY=your-secret-key \
+  coddojo:latest
 ```
 
 ## Usage
