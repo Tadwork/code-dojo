@@ -12,7 +12,6 @@ services:
     plan: free # Default plan for new services
     autoDeployTrigger: commit # Auto-deploy on every commit
     healthCheckPath: /api/health
-    maxShutdownDelaySeconds: 30 # Graceful shutdown period
     envVars:
       - key: PORT
         value: 8000
