@@ -1,27 +1,35 @@
+# CodeDojo Render Blueprint Configuration
+# This file defines the infrastructure for the CodeDojo application
+
 services:
+  # Main web service - builds from Dockerfile and serves both backend API and frontend
   - type: web
     name: coddojo
-    env: docker
+    runtime: docker # Use 'runtime' instead of deprecated 'env'
     dockerfilePath: ./Dockerfile
     dockerContext: .
+    region: virginia # Default region
+    plan: free # Default plan for new services
+    autoDeployTrigger: commit # Auto-deploy on every commit
+    healthCheckPath: /api/health
+    maxShutdownDelaySeconds: 30 # Graceful shutdown period
     envVars:
       - key: PORT
         value: 8000
       - key: ENVIRONMENT
         value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: coddojo-db
+          property: connectionString
 
-    healthCheckPath: /api/health
-
-  - type: pserv
-    name: coddojo-db
-    env: postgres
-    plan: free
-    databases:
-      - name: coddojo
-    envVars:
-      - key: POSTGRES_USER
-        value: postgres
-      - key: POSTGRES_PASSWORD
-        value: postgres
-      - key: POSTGRES_DB
-        value: coddojo
+# Render Postgres databases
+databases:
+  - name: coddojo-db
+    plan: free # Free tier for development
+    databaseName: coddojo # Database name within PostgreSQL instance
+    region: oregon
+    postgresMajorVersion: '16' # Use recent stable version
+    ipAllowList: # Allow connections from anywhere (can restrict later)
+      - source: 0.0.0.0/0
+        description: allow all connections
