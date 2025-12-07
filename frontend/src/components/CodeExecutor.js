@@ -7,12 +7,17 @@ const CodeExecutor = ({ code, language }) => {
   const [isRunning, setIsRunning] = useState(false);
   const workerRef = useRef(null);
 
+  const terminateWorker = () => {
+    if (workerRef.current && typeof workerRef.current.terminate === 'function') {
+      workerRef.current.terminate();
+    }
+    workerRef.current = null;
+  };
+
   useEffect(() => {
     // Cleanup worker on unmount
     return () => {
-      if (workerRef.current) {
-        workerRef.current.terminate();
-      }
+      terminateWorker();
     };
   }, []);
 
@@ -91,15 +96,13 @@ const CodeExecutor = ({ code, language }) => {
         setError(e.data.data);
         setIsRunning(false);
       }
-      worker.terminate();
-      workerRef.current = null;
+      terminateWorker();
     };
 
     worker.onerror = (err) => {
       setError(`Execution error: ${err.message}`);
       setIsRunning(false);
-      worker.terminate();
-      workerRef.current = null;
+      terminateWorker();
     };
 
     worker.postMessage(codeToRun);

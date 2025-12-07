@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import CodeExecutor from '../CodeExecutor';
 
 // Mock Web Worker
@@ -57,7 +57,9 @@ describe('CodeExecutor', () => {
     expect(mockWorker.postMessage).toHaveBeenCalledWith("console.log('hello')");
 
     // Simulate worker response
-    mockWorker.onmessage({ data: { type: 'output', data: 'hello\n' } });
+    await act(async () => {
+      mockWorker.onmessage({ data: { type: 'output', data: 'hello\n' } });
+    });
 
     await waitFor(() => {
       expect(screen.getByText('hello')).toBeInTheDocument();
@@ -80,12 +82,14 @@ describe('CodeExecutor', () => {
     fireEvent.click(runButton);
 
     // Simulate worker error
-    mockWorker.onmessage({
-      data: { type: 'error', data: 'SyntaxError: Unexpected token' },
+    await act(async () => {
+      mockWorker.onmessage({
+        data: { type: 'error', data: 'SyntaxError: Unexpected token' },
+      });
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/Error:/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/Error:/i).length).toBeGreaterThan(0);
       expect(screen.getByText(/SyntaxError/i)).toBeInTheDocument();
     });
   });
@@ -111,7 +115,7 @@ describe('CodeExecutor', () => {
 
     fireEvent.click(runButton);
 
-    expect(screen.getByText('Running...')).toBeDisabled();
+    expect(screen.getByRole('button', { name: /running/i })).toBeDisabled();
   });
 
   it('should cleanup worker on unmount', () => {
@@ -127,6 +131,9 @@ describe('CodeExecutor', () => {
     const { unmount } = render(
       <CodeExecutor code="console.log('test')" language="javascript" />
     );
+
+    const runButton = screen.getByText('Run Code');
+    fireEvent.click(runButton);
 
     unmount();
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import SessionPage from '../SessionPage';
 import * as api from '../../services/api';
 import useWebSocket from '../../hooks/useWebSocket';
@@ -30,9 +30,11 @@ const mockSession = {
 
 const renderWithRouter = (component, initialEntries = ['/session/TEST1234']) => {
   return render(
-    <BrowserRouter>
-      {component}
-    </BrowserRouter>
+    <MemoryRouter initialEntries={initialEntries}>
+      <Routes>
+        <Route path="/session/:sessionCode" element={component} />
+      </Routes>
+    </MemoryRouter>
   );
 };
 
@@ -89,7 +91,7 @@ describe('SessionPage', () => {
 
     await waitFor(() => {
       const shareInput = screen.getByDisplayValue(
-        /http:\/\/localhost\/session\/TEST1234/i
+        /http:\/\/localhost(:3000)?\/session\/TEST1234/i
       );
       expect(shareInput).toBeInTheDocument();
     });
@@ -129,7 +131,8 @@ describe('SessionPage', () => {
     renderWithRouter(<SessionPage />);
 
     await waitFor(() => {
-      const languageSelect = screen.getByDisplayValue('python');
+      const languageSelect = screen.getByRole('combobox');
+      expect(languageSelect.value).toBe('python');
       fireEvent.change(languageSelect, { target: { value: 'javascript' } });
 
       expect(mockSendMessage).toHaveBeenCalledWith({

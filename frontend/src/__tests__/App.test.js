@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import App from '../App';
+import App, { AppRoutes } from '../App';
 
 // Mock the page components
 jest.mock('../pages/HomePage', () => {
@@ -18,11 +18,7 @@ jest.mock('../pages/SessionPage', () => {
 
 describe('App', () => {
   it('should render App component', () => {
-    render(
-      <MemoryRouter>
-        <App />
-      </MemoryRouter>
-    );
+    render(<App />);
 
     expect(screen.getByText('HomePage')).toBeInTheDocument();
   });
@@ -30,7 +26,7 @@ describe('App', () => {
   it('should render HomePage at root route', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
-        <App />
+        <AppRoutes />
       </MemoryRouter>
     );
 
@@ -40,7 +36,7 @@ describe('App', () => {
   it('should render SessionPage at session route', () => {
     render(
       <MemoryRouter initialEntries={['/session/TEST1234']}>
-        <App />
+        <AppRoutes />
       </MemoryRouter>
     );
 
