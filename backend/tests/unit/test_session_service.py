@@ -17,7 +17,7 @@ class TestSessionService:
         assert len(code) == 8
         assert code.isupper()
         # token_urlsafe can generate codes with hyphens, so check alphanumeric or hyphen
-        assert all(c.isalnum() or c == '-' for c in code)
+        assert all(c.isalnum() or c == "-" for c in code)
 
     def test_generate_session_code_uniqueness(self):
         """Test that generated codes are likely unique."""
@@ -38,9 +38,10 @@ class TestSessionService:
         mock_session.created_at = None
         mock_session.active_users = 0
 
-        with patch.object(
-            SessionService, "get_session_by_code", return_value=None
-        ), patch.object(Session, "__init__", return_value=None) as mock_init:
+        with (
+            patch.object(SessionService, "get_session_by_code", return_value=None),
+            patch.object(Session, "__init__", return_value=None) as mock_init,
+        ):
             mock_init.return_value = None
             mock_db.add = MagicMock()
             mock_db.commit = AsyncMock()
@@ -68,9 +69,9 @@ class TestSessionService:
 
         with patch("app.services.session_service.select"):
             mock_db.execute = AsyncMock(return_value=mock_result)
-            
+
             result = await SessionService.get_session_by_code(mock_db, "TEST1234")
-            
+
             assert result == mock_session
             assert mock_db.execute.called
 
@@ -83,9 +84,9 @@ class TestSessionService:
 
         with patch("app.services.session_service.select"):
             mock_db.execute = AsyncMock(return_value=mock_result)
-            
+
             result = await SessionService.get_session_by_code(mock_db, "NONEXIST")
-            
+
             assert result is None
 
     @pytest.mark.asyncio
@@ -95,12 +96,8 @@ class TestSessionService:
         mock_session = MagicMock(spec=Session)
         mock_session.code = "old code"
 
-        with patch.object(
-            SessionService, "get_session_by_code", return_value=mock_session
-        ):
-            result = await SessionService.update_session_code(
-                mock_db, "TEST1234", "new code"
-            )
+        with patch.object(SessionService, "get_session_by_code", return_value=mock_session):
+            result = await SessionService.update_session_code(mock_db, "TEST1234", "new code")
 
             assert mock_session.code == "new code"
             assert mock_db.commit.called
@@ -112,12 +109,8 @@ class TestSessionService:
         """Test updating code for non-existent session."""
         mock_db = AsyncMock(spec=AsyncSession)
 
-        with patch.object(
-            SessionService, "get_session_by_code", return_value=None
-        ):
-            result = await SessionService.update_session_code(
-                mock_db, "NONEXIST", "new code"
-            )
+        with patch.object(SessionService, "get_session_by_code", return_value=None):
+            result = await SessionService.update_session_code(mock_db, "NONEXIST", "new code")
 
             assert result is None
             assert not mock_db.commit.called
@@ -129,12 +122,8 @@ class TestSessionService:
         mock_session = MagicMock(spec=Session)
         mock_session.language = "python"
 
-        with patch.object(
-            SessionService, "get_session_by_code", return_value=mock_session
-        ):
-            result = await SessionService.update_session_language(
-                mock_db, "TEST1234", "javascript"
-            )
+        with patch.object(SessionService, "get_session_by_code", return_value=mock_session):
+            result = await SessionService.update_session_language(mock_db, "TEST1234", "javascript")
 
             assert mock_session.language == "javascript"
             assert mock_db.commit.called
@@ -146,13 +135,8 @@ class TestSessionService:
         """Test updating language for non-existent session."""
         mock_db = AsyncMock(spec=AsyncSession)
 
-        with patch.object(
-            SessionService, "get_session_by_code", return_value=None
-        ):
-            result = await SessionService.update_session_language(
-                mock_db, "NONEXIST", "javascript"
-            )
+        with patch.object(SessionService, "get_session_by_code", return_value=None):
+            result = await SessionService.update_session_language(mock_db, "NONEXIST", "javascript")
 
             assert result is None
             assert not mock_db.commit.called
-

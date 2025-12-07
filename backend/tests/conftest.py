@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 from sqlalchemy.orm import declarative_base
 
 from app.main import app
+
 # Test database engine
 test_engine = create_async_engine(
     "sqlite+aiosqlite:///:memory:",
@@ -30,11 +31,7 @@ def client():
 @pytest.fixture
 def sample_user():
     """Sample user data for testing."""
-    return {
-        "id": 1,
-        "username": "testuser",
-        "email": "test@example.com"
-    }
+    return {"id": 1, "username": "testuser", "email": "test@example.com"}
 
 
 @pytest.fixture
@@ -43,4 +40,3 @@ async def db_session():
     async with TestSessionLocal() as session:
         yield session
         await session.rollback()
-

@@ -81,4 +81,3 @@ class TestConnectionManager:
         # ws1 should be removed due to error
         assert mock_ws2 in cm.active_connections.get("TEST1234", set())
         assert mock_ws1 not in cm.active_connections.get("TEST1234", set())
-

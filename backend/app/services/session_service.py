@@ -48,9 +48,7 @@ class SessionService:
         session_code: str,
     ) -> Optional[Session]:
         """Get a session by its code."""
-        result = await db.execute(
-            select(Session).where(Session.session_code == session_code)
-        )
+        result = await db.execute(select(Session).where(Session.session_code == session_code))
         return result.scalar_one_or_none()
 
     @staticmethod
@@ -80,4 +78,3 @@ class SessionService:
             await db.commit()
             await db.refresh(session)
         return session
-

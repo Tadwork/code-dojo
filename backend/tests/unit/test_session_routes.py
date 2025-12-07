@@ -102,4 +102,3 @@ class TestSessionRoutes:
             mock_get.assert_called_once()
             call_args = mock_get.call_args[0]
             assert call_args[1] == "TEST1234"
-

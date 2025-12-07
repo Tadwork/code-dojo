@@ -13,8 +13,7 @@ class Settings(BaseSettings):
 
     # Database
     database_url: str = os.getenv(
-        "DATABASE_URL",
-        "postgresql+asyncpg://postgres:postgres@localhost:5432/coddojo"
+        "DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/coddojo"
     )
 
     # Application
@@ -33,4 +32,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-

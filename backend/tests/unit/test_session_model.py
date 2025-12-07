@@ -15,7 +15,7 @@ class TestSessionModel:
             language="python",
             code="print('hello')",
         )
-        
+
         assert session.session_code == "TEST1234"
         assert session.title == "Test Session"
         assert session.language == "python"
@@ -25,7 +25,7 @@ class TestSessionModel:
     def test_session_defaults(self):
         """Test session default values."""
         session = Session(session_code="TEST1234")
-        
+
         assert session.language == "python"
         assert session.code == ""
         assert session.active_users == 0
@@ -35,7 +35,7 @@ class TestSessionModel:
         """Test session string representation."""
         session = Session(session_code="TEST1234")
         repr_str = repr(session)
-        
+
         assert "TEST1234" in repr_str
         assert "Session" in repr_str
 
@@ -43,7 +43,6 @@ class TestSessionModel:
         """Test session created_at timestamp."""
         session = Session(session_code="TEST1234")
         session.created_at = datetime.utcnow()
-        
+
         assert session.created_at is not None
         assert isinstance(session.created_at, datetime)
-

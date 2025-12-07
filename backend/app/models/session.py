@@ -40,4 +40,3 @@ class Session(Base):
     def __repr__(self) -> str:
         """String representation."""
         return f"<Session {self.session_code}>"
-

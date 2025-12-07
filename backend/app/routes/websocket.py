@@ -63,11 +63,11 @@ async def websocket_endpoint(
 ):
     """
     WebSocket endpoint for real-time collaboration.
-    
+
     Connect to this endpoint using a WebSocket client. The session_code must be a valid existing session.
-    
+
     **Message Types:**
-    
+
     **Client to Server:**
     - `code_change`: Update the code in the session
       ```json
@@ -81,19 +81,19 @@ async def websocket_endpoint(
       ```json
       {"type": "cursor_position", "userId": "user123", "position": {"line": 5, "column": 10}}
       ```
-    
+
     **Server to Client:**
     - `code_update`: Broadcast code changes to all connected clients
     - `language_update`: Broadcast language changes
     - `cursor_update`: Broadcast cursor position updates
     - `error`: Error message with details
-    
+
     **Error Handling:**
     The server will send error messages for invalid JSON, missing fields, unknown message types, or database failures.
-    
+
     **Disconnection:**
     The connection will be closed if the session doesn't exist (code 1008), an internal error occurs (code 1011), or the client disconnects normally.
-    
+
     - **session_code**: The unique 8-character session code (case-insensitive)
     """
     session_code = session_code.upper()
@@ -112,11 +112,13 @@ async def websocket_endpoint(
         async with AsyncSessionLocal() as db:
             session = await SessionService.get_session_by_code(db, session_code)
             if session:
-                await websocket.send_json({
-                    "type": "code_update",
-                    "code": session.code,
-                    "language": session.language,
-                })
+                await websocket.send_json(
+                    {
+                        "type": "code_update",
+                        "code": session.code,
+                        "language": session.language,
+                    }
+                )
 
         while True:
             try:
@@ -129,19 +131,23 @@ async def websocket_endpoint(
                 message = json.loads(data)
             except json.JSONDecodeError as e:
                 logger.warning(f"Invalid JSON received from client: {e}")
-                await websocket.send_json({
-                    "type": "error",
-                    "message": "Invalid JSON format",
-                })
+                await websocket.send_json(
+                    {
+                        "type": "error",
+                        "message": "Invalid JSON format",
+                    }
+                )
                 continue
 
             # Validate message has required 'type' field
             if not isinstance(message, dict) or "type" not in message:
                 logger.warning(f"Message missing 'type' field: {message}")
-                await websocket.send_json({
-                    "type": "error",
-                    "message": "Message must contain a 'type' field",
-                })
+                await websocket.send_json(
+                    {
+                        "type": "error",
+                        "message": "Message must contain a 'type' field",
+                    }
+                )
                 continue
 
             message_type = message["type"]
@@ -150,10 +156,12 @@ async def websocket_endpoint(
                 if message_type == "code_change":
                     # Validate required fields
                     if "code" not in message:
-                        await websocket.send_json({
-                            "type": "error",
-                            "message": "code_change message must contain 'code' field",
-                        })
+                        await websocket.send_json(
+                            {
+                                "type": "error",
+                                "message": "code_change message must contain 'code' field",
+                            }
+                        )
                         continue
 
                     # Update code in database
@@ -166,10 +174,12 @@ async def websocket_endpoint(
                             )
                     except Exception as e:
                         logger.error(f"Error updating session code: {e}")
-                        await websocket.send_json({
-                            "type": "error",
-                            "message": "Failed to update code in database",
-                        })
+                        await websocket.send_json(
+                            {
+                                "type": "error",
+                                "message": "Failed to update code in database",
+                            }
+                        )
                         continue
 
                     # Broadcast to all other connections
@@ -186,10 +196,12 @@ async def websocket_endpoint(
                 elif message_type == "language_change":
                     # Validate required fields
                     if "language" not in message:
-                        await websocket.send_json({
-                            "type": "error",
-                            "message": "language_change message must contain 'language' field",
-                        })
+                        await websocket.send_json(
+                            {
+                                "type": "error",
+                                "message": "language_change message must contain 'language' field",
+                            }
+                        )
                         continue
 
                     # Update language in database
@@ -202,10 +214,12 @@ async def websocket_endpoint(
                             )
                     except Exception as e:
                         logger.error(f"Error updating session language: {e}")
-                        await websocket.send_json({
-                            "type": "error",
-                            "message": "Failed to update language in database",
-                        })
+                        await websocket.send_json(
+                            {
+                                "type": "error",
+                                "message": "Failed to update language in database",
+                            }
+                        )
                         continue
 
                     # Broadcast to all connections
@@ -232,23 +246,29 @@ async def websocket_endpoint(
                 else:
                     # Unknown message type
                     logger.warning(f"Unknown message type: {message_type}")
-                    await websocket.send_json({
-                        "type": "error",
-                        "message": f"Unknown message type: {message_type}",
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": "error",
+                            "message": f"Unknown message type: {message_type}",
+                        }
+                    )
 
             except KeyError as e:
                 logger.warning(f"Missing required field in message: {e}")
-                await websocket.send_json({
-                    "type": "error",
-                    "message": f"Missing required field: {e}",
-                })
+                await websocket.send_json(
+                    {
+                        "type": "error",
+                        "message": f"Missing required field: {e}",
+                    }
+                )
             except Exception as e:
                 logger.error(f"Unexpected error processing message: {e}", exc_info=True)
-                await websocket.send_json({
-                    "type": "error",
-                    "message": "An error occurred processing your message",
-                })
+                await websocket.send_json(
+                    {
+                        "type": "error",
+                        "message": "An error occurred processing your message",
+                    }
+                )
 
     except WebSocketDisconnect:
         logger.info(f"WebSocket disconnected for session {session_code}")
@@ -260,4 +280,3 @@ async def websocket_endpoint(
         except Exception:
             pass
         manager.disconnect(websocket, session_code)
-

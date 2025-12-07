@@ -19,12 +19,7 @@ class SessionCreate(BaseModel):
     class Config:
         """Pydantic config."""
 
-        json_schema_extra = {
-            "example": {
-                "title": "Interview with John Doe",
-                "language": "python"
-            }
-        }
+        json_schema_extra = {"example": {"title": "Interview with John Doe", "language": "python"}}
 
 
 class SessionResponse(BaseModel):
@@ -50,7 +45,7 @@ class SessionResponse(BaseModel):
                 "language": "python",
                 "code": "print('Hello, World!')",
                 "created_at": "2024-01-15T10:30:00",
-                "active_users": 2
+                "active_users": 2,
             }
         }
 
@@ -78,15 +73,15 @@ class SessionResponse(BaseModel):
                         "language": "python",
                         "code": "",
                         "created_at": "2024-01-15T10:30:00",
-                        "active_users": 0
+                        "active_users": 0,
                     }
                 }
-            }
+            },
         },
         500: {
             "description": "Internal server error",
-        }
-    }
+        },
+    },
 )
 async def create_session(
     session_data: SessionCreate,
@@ -94,10 +89,10 @@ async def create_session(
 ):
     """
     Create a new coding session.
-    
+
     - **title**: Optional title for the session (e.g., "Interview with John Doe")
     - **language**: Programming language for the session (default: "python")
-    
+
     Returns a session object with a unique session_code that can be shared.
     """
     session = await SessionService.create_session(
@@ -137,22 +132,16 @@ async def create_session(
                         "language": "python",
                         "code": "print('Hello, World!')",
                         "created_at": "2024-01-15T10:30:00",
-                        "active_users": 2
+                        "active_users": 2,
                     }
                 }
-            }
+            },
         },
         404: {
             "description": "Session not found",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Session not found"
-                    }
-                }
-            }
-        }
-    }
+            "content": {"application/json": {"example": {"detail": "Session not found"}}},
+        },
+    },
 )
 async def get_session(
     session_code: str,
@@ -160,9 +149,9 @@ async def get_session(
 ):
     """
     Get a session by code.
-    
+
     - **session_code**: The unique 8-character session code (case-insensitive)
-    
+
     Returns the session details including current code, language, and active user count.
     """
     session = await SessionService.get_session_by_code(db, session_code.upper())
@@ -178,4 +167,3 @@ async def get_session(
         created_at=session.created_at.isoformat(),
         active_users=session.active_users,
     )
-

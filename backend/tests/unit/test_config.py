@@ -37,7 +37,7 @@ class TestSettings:
         monkeypatch.setenv("ENVIRONMENT", "production")
         monkeypatch.setenv("PORT", "9000")
         monkeypatch.setenv("SECRET_KEY", "test-secret-key")
-        
+
         test_settings = Settings()
         assert test_settings.environment == "production"
         assert test_settings.port == 9000
@@ -47,4 +47,3 @@ class TestSettings:
         """Test that settings is a singleton instance."""
         assert settings is not None
         assert isinstance(settings, Settings)
-

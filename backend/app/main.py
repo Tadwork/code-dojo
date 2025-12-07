@@ -122,10 +122,7 @@ async def get_openapi_yaml():
         return Response(content=yaml_schema, media_type="application/x-yaml")
     else:
         # If PyYAML is not installed, return JSON instead
-        return Response(
-            content=json.dumps(openapi_schema, indent=2),
-            media_type="application/json"
-        )
+        return Response(content=json.dumps(openapi_schema, indent=2), media_type="application/json")
 
 
 @app.get(
@@ -138,20 +135,15 @@ async def get_openapi_yaml():
         200: {
             "description": "Server is healthy",
             "content": {
-                "application/json": {
-                    "example": {
-                        "status": "healthy",
-                        "environment": "development"
-                    }
-                }
-            }
+                "application/json": {"example": {"status": "healthy", "environment": "development"}}
+            },
         }
-    }
+    },
 )
 async def health_check():
     """
     Health check endpoint.
-    
+
     Returns the current health status of the API server and the environment it's running in.
     """
     return {"status": "healthy", "environment": settings.environment}
@@ -165,9 +157,12 @@ if os.path.exists(static_dir):
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
         """Serve React app for all non-API routes."""
-        if not full_path.startswith("api") and not full_path.startswith("ws") and not full_path.startswith("static"):
+        if (
+            not full_path.startswith("api")
+            and not full_path.startswith("ws")
+            and not full_path.startswith("static")
+        ):
             index_path = os.path.join(static_dir, "index.html")
             if os.path.exists(index_path):
                 return FileResponse(index_path)
         return {"error": "Not found"}
-
