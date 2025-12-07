@@ -56,7 +56,6 @@ RUN pip install --no-cache-dir uv
 
 # Copy backend from builder
 COPY --from=backend-builder /app /app
-COPY --from=backend-builder /root/.local/share/uv /root/.local/share/uv
 
 # Copy frontend build from builder
 COPY --from=frontend-builder /app/frontend/build /app/static
