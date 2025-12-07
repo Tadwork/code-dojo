@@ -21,6 +21,8 @@ services:
         fromDatabase:
           name: codedojo-db
           property: connectionString
+      # - key: CORS_ORIGINS
+      #   value: "https://codedojo-se9d.onrender.com"
 
 # Render Postgres databases
 databases:

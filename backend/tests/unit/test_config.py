@@ -35,7 +35,6 @@ class TestSettings:
         test_settings = Settings()
         assert "http://localhost:3000" in test_settings.cors_origins
         assert "http://localhost:8000" in test_settings.cors_origins
-        assert "https://codedojo-se9d.onrender.com" in test_settings.cors_origins
 
     def test_environment_variable_override(self, monkeypatch):
         """Test environment variable override."""
