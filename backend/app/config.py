@@ -31,7 +31,11 @@ class Settings(BaseSettings):
     secret_key: str = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
 
     # CORS
-    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:8000"]
+    cors_origins: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "https://codedojo-se9d.onrender.com",
+    ]
 
     class Config:
         """Pydantic config."""
