@@ -9,4 +9,19 @@ services:
         value: 8000
       - key: ENVIRONMENT
         value: production
+
     healthCheckPath: /api/health
+
+  - type: pserv
+    name: coddojo-db
+    env: postgres
+    plan: free
+    databases:
+      - name: coddojo
+    envVars:
+      - key: POSTGRES_USER
+        value: postgres
+      - key: POSTGRES_PASSWORD
+        value: postgres
+      - key: POSTGRES_DB
+        value: coddojo
