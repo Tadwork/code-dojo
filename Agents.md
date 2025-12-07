@@ -147,10 +147,30 @@ CodeDojo/
 ### Testing Best Practices
 
 1. **Test Coverage Requirements**:
-   - Minimum 80% code coverage for all backend code
+   - **MANDATORY**: Minimum 80% code coverage for all backend code
+   - **MANDATORY**: Minimum 70% code coverage for all frontend code
+   - **MANDATORY**: Every component, service, route, and utility function MUST have unit tests
    - All API endpoints must have integration tests
    - All business logic must have unit tests
+   - All React components must have unit tests
+   - All custom hooks must have unit tests
+   - All service functions must have unit tests
    - Use `pytest-cov` to enforce coverage thresholds
+   - Use Jest coverage to enforce frontend thresholds
+
+2. **Unit Test Requirements**:
+   - **EVERY** Python module in `app/` must have a corresponding test file in `tests/unit/`
+   - **EVERY** React component must have a test file in `__tests__/` directory
+   - **EVERY** custom hook must have a test file
+   - **EVERY** service/utility function must have tests
+   - Test files must be named `test_<module_name>.py` for Python or `<ComponentName>.test.js` for React
+   - Tests must cover:
+     - Happy paths (successful operations)
+     - Error cases (failures, edge cases)
+     - Boundary conditions
+     - Input validation
+     - State changes
+     - Side effects
 
 2. **Test Structure**:
    ```python
@@ -352,9 +372,24 @@ CodeDojo/
    ```
 
 5. **Coverage Requirements**:
-   - Minimum 70% code coverage for frontend components
+   - **MANDATORY**: Minimum 70% code coverage for frontend components
+   - **MANDATORY**: Every React component must have unit tests
+   - **MANDATORY**: Every custom hook must have unit tests
+   - **MANDATORY**: Every service/API function must have unit tests
    - All user interactions must be tested
    - All API service calls must be mocked and tested
+   - All component props and state changes must be tested
+   - All event handlers must be tested
+
+6. **Unit Test Checklist** (MUST be completed for every component):
+   - [ ] Component renders without errors
+   - [ ] Component handles props correctly
+   - [ ] Component state changes are tested
+   - [ ] User interactions (clicks, inputs) are tested
+   - [ ] Error states are tested
+   - [ ] Loading states are tested
+   - [ ] Edge cases are tested
+   - [ ] Mocked dependencies are verified
 
 ## Dockerization for Single Image Deployment
 
@@ -597,9 +632,11 @@ If building Docker images externally:
 ### After Making Changes
 
 1. **Verify Tests Pass**:
-   - All existing tests must pass
-   - New tests must be added for new features
-   - Coverage thresholds must be met
+   - **MANDATORY**: All existing tests must pass
+   - **MANDATORY**: New tests must be added for ALL new features/components
+   - **MANDATORY**: Coverage thresholds must be met (80% backend, 70% frontend)
+   - **MANDATORY**: Every new component/service/route must have corresponding unit tests
+   - **MANDATORY**: Run tests locally before committing: `uv run pytest` and `npm test`
 
 2. **Check Code Quality**:
    ```bash
