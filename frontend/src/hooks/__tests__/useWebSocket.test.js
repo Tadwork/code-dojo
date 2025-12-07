@@ -74,15 +74,6 @@ Object.assign(global.WebSocket, {
   CLOSED: 3,
 });
 
-// Mock WebSocket globally
-const mockWebSocketInstances = [];
-
-global.WebSocket = jest.fn((url) => {
-  const mockWS = new MockWebSocket(url);
-  mockWebSocketInstances.push(mockWS);
-  return mockWS;
-});
-
 describe('useWebSocket', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -105,7 +96,7 @@ describe('useWebSocket', () => {
     const onMessage = jest.fn();
     const { result } = renderHook(() => useWebSocket('TEST1234', onMessage));
 
-    // Get the WebSocket instance that was created
+    // Wait for WebSocket to be created
     await waitFor(() => {
       expect(mockWebSocketInstances.length).toBeGreaterThan(0);
     });
@@ -178,10 +169,14 @@ describe('useWebSocket', () => {
     const onMessage = jest.fn();
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
     
-    const { result } = renderHook(() => useWebSocket('TEST1234', onMessage));
+    renderHook(() => useWebSocket('TEST1234', onMessage));
 
-    const ws = new WebSocket('ws://localhost/ws/TEST1234');
-    ws.simulateError();
+    // Wait for WebSocket and simulate error
+    setTimeout(() => {
+      if (mockWebSocketInstances.length > 0) {
+        mockWebSocketInstances[0].simulateError();
+      }
+    }, 0);
 
     expect(consoleErrorSpy).toHaveBeenCalled();
     consoleErrorSpy.mockRestore();
@@ -200,7 +195,6 @@ describe('useWebSocket', () => {
 
     unmount();
 
-    expect(ws.readyState).toBe(WebSocket.CLOSED);
+    expect(ws.readyState).toBe(MockWebSocket.CLOSED);
   });
 });
-
