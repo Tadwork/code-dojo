@@ -10,7 +10,7 @@ services:
     dockerContext: .
     region: virginia # Default region
     plan: free # Default plan for new services
-    autoDeployTrigger: commit # Auto-deploy on every commit
+    autoDeployTrigger: checksPass # Deploy on successful CI
     healthCheckPath: /api/health
     envVars:
       - key: PORT
