@@ -27,7 +27,7 @@ databases:
   - name: coddojo-db
     plan: free # Free tier for development
     databaseName: coddojo # Database name within PostgreSQL instance
-    region: oregon
+    region: virginia
     postgresMajorVersion: '16' # Use recent stable version
     ipAllowList: # Allow connections from anywhere (can restrict later)
       - source: 0.0.0.0/0
