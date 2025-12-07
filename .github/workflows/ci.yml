@@ -42,7 +42,8 @@ jobs:
       - name: Install dependencies
         working-directory: ./backend
         run: |
-          uv sync --dev
+          # Install dev extras so tools like ruff are available in CI
+          uv sync --dev --extra dev
       
       - name: Run linting
         working-directory: ./backend
