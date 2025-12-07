@@ -119,6 +119,22 @@ docker run -p 8000:8000 \
   coddojo:latest
 ```
 
+### Docker Single-Image Local Run (SQLite, no dependencies)
+
+If you just want to run everything locally from the single image without Postgres:
+
+```bash
+docker build --no-cache -t coddojo:latest .
+docker run -p 8000:8000 \
+   -e ENVIRONMENT=development \
+   -e PORT=8000 \
+   -e DATABASE_URL=sqlite+aiosqlite:///./dev.db \
+   -e SECRET_KEY=dev-secret-key-change-in-production \
+   coddojo:latest
+```
+
+Then open http://localhost:8000/ — the backend API and the built frontend are served from the same container. SQLite will create `dev.db` inside the container on first run.
+
 ## Usage
 
 1. **Create a Session**:

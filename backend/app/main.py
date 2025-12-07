@@ -1,10 +1,10 @@
 """Main FastAPI application."""
 
 import json
-import os
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 
 try:
@@ -150,19 +150,9 @@ async def health_check():
 
 
 # Serve static files (React build)
-static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
-if os.path.exists(static_dir):
-    app.mount("/static", StaticFiles(directory=static_dir), name="static")
-
-    @app.get("/{full_path:path}")
-    async def serve_spa(full_path: str):
-        """Serve React app for all non-API routes."""
-        if (
-            not full_path.startswith("api")
-            and not full_path.startswith("ws")
-            and not full_path.startswith("static")
-        ):
-            index_path = os.path.join(static_dir, "index.html")
-            if os.path.exists(index_path):
-                return FileResponse(index_path)
-        return {"error": "Not found"}
+static_dir = Path(__file__).resolve().parent.parent / "static"
+if static_dir.exists():
+    # Serve hashed assets from the nested build "static" folder
+    app.mount("/static", StaticFiles(directory=static_dir / "static"), name="static")
+    # Serve index.html and top-level assets (favicon, manifest, etc.)
+    app.mount("/", StaticFiles(directory=static_dir, html=True), name="frontend")
