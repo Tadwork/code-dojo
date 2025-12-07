@@ -214,14 +214,49 @@ The application uses PostgreSQL with the following main table:
 
 ## Deployment
 
-See `Agents.md` for detailed deployment instructions to Render service.
+### Render Blueprints (Infrastructure as Code)
+
+CodeDojo uses **Render Blueprints** for infrastructure-as-code (IaC) deployment. A Blueprint is a `render.yaml` file that defines and manages multiple resources (services, databases, environment groups) from a single YAML configuration.
+
+#### Our Blueprint Configuration
+
+The `render.yaml` file at the root of this repository defines:
+
+1. **Web Service** (`coddojo`): 
+   - Builds from our multi-stage Dockerfile
+   - Serves both the FastAPI backend and React frontend
+   - Automatically connects to the PostgreSQL database
+   - Health checks at `/api/health`
+
+2. **PostgreSQL Database** (`coddojo-db`):
+   - Free tier instance for development
+   - Automatically provides connection string to the web service
+   - PostgreSQL 16
+
+#### Deploying with Blueprints
+
+1. **Initial Setup**:
+   - Go to [Render Dashboard](https://dashboard.render.com)
+   - Click **New > Blueprint**
+   - Connect your GitHub/GitLab repository
+   - Select the branch (e.g., `main`)
+   - Review and apply the Blueprint
+
+2. **Updating Infrastructure**:
+   - Modify `render.yaml` in your repository
+   - Commit and push to your linked branch
+   - Render automatically applies changes
 
 ### Environment Variables for Production
 
-- `DATABASE_URL`: PostgreSQL connection string
+- `DATABASE_URL`: PostgreSQL connection string (automatically set by Blueprint)
 - `ENVIRONMENT`: Set to `production`
 - `SECRET_KEY`: Strong secret key for security
 - `PORT`: Port number (default: 8000)
+
+### Manual Deployment (Alternative)
+
+For manual deployment without Blueprints, see `Agents.md` for detailed instructions.
 
 ## Development Guidelines
 
