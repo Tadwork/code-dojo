@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import Response, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -151,18 +151,17 @@ async def health_check():
 
 # Serve static files (React build) AFTER API routes so /api/* and /ws/* are not caught here
 static_dir = Path(__file__).resolve().parent.parent / "static"
-if static_dir.exists():
-    # Serve static assets (CSS, JS bundles with hashes)
-    app.mount("/static", StaticFiles(directory=static_dir / "static"), name="static")
-    
-    # Fallback: Serve index.html for all unmatched routes (SPA routing)
-    @app.get("/{full_path:path}")
-    async def serve_spa(_full_path: str):
-        """Serve React app for all non-API routes."""
-        index_file = static_dir / "index.html"
-        if index_file.exists():
-            return FileResponse(index_file)
-        return {"error": "SPA index not found"}
-    
-    # Also serve top-level files like favicon, manifest
-    app.mount("/", StaticFiles(directory=static_dir, html=False), name="frontend")
+
+# Serve static assets (CSS, JS bundles with hashes) when present
+static_assets_dir = static_dir / "static"
+if static_assets_dir.exists():
+    app.mount("/static", StaticFiles(directory=static_assets_dir), name="static")
+
+
+@app.get("/{full_path:path}")
+async def serve_spa(_full_path: str):
+    """Serve React app for all non-API routes."""
+    index_file = static_dir / "index.html"
+    if index_file.exists():
+        return FileResponse(index_file)
+    raise HTTPException(status_code=404, detail="SPA index not found")
