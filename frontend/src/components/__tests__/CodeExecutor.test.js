@@ -90,8 +90,8 @@ describe('CodeExecutor', () => {
 
     await waitFor(() => {
       expect(screen.getAllByText(/Error:/i).length).toBeGreaterThan(0);
-      expect(screen.getByText(/SyntaxError/i)).toBeInTheDocument();
     });
+    expect(screen.getByText(/SyntaxError/i)).toBeInTheDocument();
   });
 
   it('should show error for unsupported languages', async () => {

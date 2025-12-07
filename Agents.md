@@ -638,7 +638,30 @@ If building Docker images externally:
    - **MANDATORY**: Every new component/service/route must have corresponding unit tests
    - **MANDATORY**: Run tests locally before committing: `uv run pytest` and `npm test`
 
-2. **Check Code Quality**:
+2. **Run Linters Before Committing** (**MANDATORY**):
+   - **CRITICAL**: Linting MUST pass before committing and pushing code
+   - **Backend**: Run `uv run ruff check .` and `uv run ruff format .` to ensure code quality
+   - **Frontend**: Run `npm run lint` to catch ESLint violations
+   - **MANDATORY**: Fix all linting errors before committing - do not commit code with linting violations
+   - Linting catches common issues like:
+     - Testing library best practices violations (e.g., multiple assertions in `waitFor`)
+     - Code style inconsistencies
+     - Potential bugs and anti-patterns
+   - Set up pre-commit hooks to automatically run linters (see Pre-commit Hooks section)
+   
+   ```bash
+   # Backend linting (MUST pass before commit)
+   cd backend
+   uv run ruff check .
+   uv run ruff format .
+   uv run mypy app/
+   
+   # Frontend linting (MUST pass before commit)
+   cd frontend
+   npm run lint
+   ```
+
+3. **Check Code Quality**:
    ```bash
    # Backend
    uv run ruff check .
@@ -648,13 +671,13 @@ If building Docker images externally:
    npm run lint
    ```
 
-3. **Test Docker Build**:
+4. **Test Docker Build**:
    ```bash
    docker build -t coddojo:test .
    docker run -p 8000:8000 coddojo:test
    ```
 
-4. **Update Documentation**:
+5. **Update Documentation**:
    - **ALWAYS check if README.md needs updating** after making changes
    - Update README.md if you:
      - Add new features or functionality

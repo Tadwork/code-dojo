@@ -70,8 +70,8 @@ describe('SessionPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Test Session')).toBeInTheDocument();
-      expect(screen.getByText(/Code: TEST1234/i)).toBeInTheDocument();
     });
+    expect(screen.getByText(/Code: TEST1234/i)).toBeInTheDocument();
   });
 
   it('should display error when session not found', async () => {
@@ -103,12 +103,13 @@ describe('SessionPage', () => {
     renderWithRouter(<SessionPage />);
 
     await waitFor(() => {
-      const copyButton = screen.getByText('Copy Link');
-      fireEvent.click(copyButton);
-
-      expect(navigator.clipboard.writeText).toHaveBeenCalled();
-      expect(global.alert).toHaveBeenCalledWith('Link copied to clipboard!');
+      expect(screen.getByText('Copy Link')).toBeInTheDocument();
     });
+    const copyButton = screen.getByText('Copy Link');
+    fireEvent.click(copyButton);
+
+    expect(navigator.clipboard.writeText).toHaveBeenCalled();
+    expect(global.alert).toHaveBeenCalledWith('Link copied to clipboard!');
   });
 
   it('should display connection status', async () => {
@@ -131,14 +132,15 @@ describe('SessionPage', () => {
     renderWithRouter(<SessionPage />);
 
     await waitFor(() => {
-      const languageSelect = screen.getByRole('combobox');
-      expect(languageSelect.value).toBe('python');
-      fireEvent.change(languageSelect, { target: { value: 'javascript' } });
+      expect(screen.getByRole('combobox')).toBeInTheDocument();
+    });
+    const languageSelect = screen.getByRole('combobox');
+    expect(languageSelect.value).toBe('python');
+    fireEvent.change(languageSelect, { target: { value: 'javascript' } });
 
-      expect(mockSendMessage).toHaveBeenCalledWith({
-        type: 'language_change',
-        language: 'javascript',
-      });
+    expect(mockSendMessage).toHaveBeenCalledWith({
+      type: 'language_change',
+      language: 'javascript',
     });
   });
 
@@ -149,16 +151,17 @@ describe('SessionPage', () => {
     renderWithRouter(<SessionPage />);
 
     await waitFor(() => {
-      const editor = screen.getByTestId('monaco-editor');
-      fireEvent.change(editor, { target: { value: 'new code' } });
+      expect(screen.getByTestId('monaco-editor')).toBeInTheDocument();
+    });
+    const editor = screen.getByTestId('monaco-editor');
+    fireEvent.change(editor, { target: { value: 'new code' } });
 
-      jest.advanceTimersByTime(300);
+    jest.advanceTimersByTime(300);
 
-      expect(mockSendMessage).toHaveBeenCalledWith({
-        type: 'code_change',
-        code: 'new code',
-        language: 'python',
-      });
+    expect(mockSendMessage).toHaveBeenCalledWith({
+      type: 'code_change',
+      code: 'new code',
+      language: 'python',
     });
 
     jest.useRealTimers();
