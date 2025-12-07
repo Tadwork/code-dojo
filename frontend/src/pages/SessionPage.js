@@ -97,11 +97,6 @@ const SessionPage = () => {
     const languageMap = {
       python: 'python',
       javascript: 'javascript',
-      java: 'java',
-      cpp: 'cpp',
-      csharp: 'csharp',
-      go: 'go',
-      rust: 'rust',
     };
     return languageMap[lang] || 'python';
   };
@@ -157,11 +152,6 @@ const SessionPage = () => {
           >
             <option value="python">Python</option>
             <option value="javascript">JavaScript</option>
-            <option value="java">Java</option>
-            <option value="cpp">C++</option>
-            <option value="csharp">C#</option>
-            <option value="go">Go</option>
-            <option value="rust">Rust</option>
           </select>
         </div>
       </div>

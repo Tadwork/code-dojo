@@ -32,7 +32,7 @@ const CodeExecutor = ({ code, language }) => {
       } else if (language === 'python') {
         await executePython(code);
       } else {
-        setError(`Code execution for ${language} is not yet supported in the browser.`);
+        setError('Unsupported language. Only Python and JavaScript are supported.');
         setIsRunning(false);
       }
     } catch (err) {
