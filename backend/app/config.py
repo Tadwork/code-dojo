@@ -16,6 +16,15 @@ class Settings(BaseSettings):
         "DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/coddojo"
     )
 
+    def __init__(self, **data):
+        """Initialize settings and convert PostgreSQL URLs to use asyncpg."""
+        super().__init__(**data)
+        # Convert postgresql:// to postgresql+asyncpg:// for async support
+        if self.database_url.startswith("postgresql://"):
+            self.database_url = self.database_url.replace(
+                "postgresql://", "postgresql+asyncpg://", 1
+            )
+
     # Application
     environment: str = os.getenv("ENVIRONMENT", "development")
     port: int = int(os.getenv("PORT", "8000"))
