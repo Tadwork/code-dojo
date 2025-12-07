@@ -617,6 +617,18 @@ If building Docker images externally:
    docker run -p 8000:8000 coddojo:test
    ```
 
+4. **Update Documentation**:
+   - **ALWAYS check if README.md needs updating** after making changes
+   - Update README.md if you:
+     - Add new features or functionality
+     - Change setup or installation steps
+     - Modify environment variables or configuration
+     - Add new dependencies
+     - Change API endpoints or behavior
+     - Update deployment procedures
+   - Keep README.md current with the actual state of the application
+   - Document any breaking changes or migration steps
+
 ## Continuous Work and State Management
 
 When working on CodeDojo over multiple sessions or when interrupted, agents must maintain continuity and preserve work state.

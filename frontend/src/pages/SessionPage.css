@@ -1,0 +1,141 @@
+.session-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+}
+
+.session-header {
+  background-color: #252526;
+  padding: 15px 20px;
+  border-bottom: 1px solid #3c3c3c;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.session-info h2 {
+  color: #4ec9b0;
+  margin-bottom: 5px;
+  font-size: 1.5rem;
+}
+
+.session-code {
+  color: #9cdcfe;
+  font-size: 0.9rem;
+}
+
+.session-controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #f44336;
+}
+
+.status-indicator.connected {
+  background-color: #4caf50;
+}
+
+.share-section {
+  display: flex;
+  gap: 8px;
+}
+
+.share-input {
+  padding: 8px 12px;
+  background-color: #3c3c3c;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #d4d4d4;
+  width: 300px;
+  font-size: 0.9rem;
+}
+
+.copy-button {
+  padding: 8px 16px;
+  background-color: #4ec9b0;
+  color: #1e1e1e;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.copy-button:hover {
+  background-color: #3db8a0;
+}
+
+.language-select {
+  padding: 8px 12px;
+  background-color: #3c3c3c;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #d4d4d4;
+  cursor: pointer;
+}
+
+.session-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.editor-container {
+  flex: 1;
+  min-height: 0;
+}
+
+.executor-container {
+  height: 300px;
+  border-top: 1px solid #3c3c3c;
+  background-color: #252526;
+}
+
+.loading,
+.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-size: 1.2rem;
+}
+
+.error {
+  flex-direction: column;
+  gap: 20px;
+}
+
+.back-button {
+  padding: 12px 24px;
+  background-color: #4ec9b0;
+  color: #1e1e1e;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.back-button:hover {
+  background-color: #3db8a0;
+}
+
