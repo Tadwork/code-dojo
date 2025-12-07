@@ -16,7 +16,8 @@ class TestSessionService:
         code = SessionService.generate_session_code()
         assert len(code) == 8
         assert code.isupper()
-        assert code.isalnum()
+        # token_urlsafe can generate codes with hyphens, so check alphanumeric or hyphen
+        assert all(c.isalnum() or c == '-' for c in code)
 
     def test_generate_session_code_uniqueness(self):
         """Test that generated codes are likely unique."""

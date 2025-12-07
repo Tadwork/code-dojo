@@ -148,6 +148,64 @@ docker run -p 8000:8000 \
 - `WS /ws/{session_code}` - WebSocket endpoint for real-time collaboration
 - `GET /api/health` - Health check endpoint
 
+## API Documentation (OpenAPI)
+
+The CodeDojo API includes comprehensive OpenAPI (Swagger) documentation that is automatically generated from the FastAPI application.
+
+### Accessing the Documentation
+
+During development, the API documentation is available at:
+
+- **Swagger UI (Interactive)**: http://localhost:8000/docs
+  - Interactive API explorer where you can test endpoints directly
+  - Includes request/response examples and schemas
+  
+- **ReDoc (Alternative UI)**: http://localhost:8000/redoc
+  - Clean, readable documentation interface
+  - Better for reading and understanding the API
+
+- **OpenAPI JSON**: http://localhost:8000/api/openapi.json
+  - Raw OpenAPI specification in JSON format
+  - Useful for importing into API clients or tools
+
+- **OpenAPI YAML**: http://localhost:8000/api/openapi.yaml
+  - Raw OpenAPI specification in YAML format
+  - Human-readable format for version control
+
+### Generating Static OpenAPI Files
+
+To generate static OpenAPI specification files for version control or external tools:
+
+```bash
+cd backend
+uv run python scripts/generate_openapi.py
+```
+
+This will create:
+- `backend/openapi/openapi.json` - JSON format
+- `backend/openapi/openapi.yaml` - YAML format
+
+### OpenAPI Features
+
+The API documentation includes:
+
+- **Comprehensive endpoint descriptions** with examples
+- **Request/response schemas** with validation rules
+- **Error responses** with status codes and descriptions
+- **WebSocket documentation** with message format specifications
+- **Tag-based organization** (sessions, websocket, health)
+- **Server configurations** for development and production environments
+
+### Using the OpenAPI Spec
+
+The OpenAPI specification can be used with:
+
+- **Postman**: Import the JSON/YAML file to create a collection
+- **Insomnia**: Import for API testing
+- **Code Generation**: Generate client SDKs using tools like `openapi-generator`
+- **API Gateway**: Import into API management platforms
+- **Documentation Tools**: Generate static documentation sites
+
 ## Database Schema
 
 The application uses PostgreSQL with the following main table:

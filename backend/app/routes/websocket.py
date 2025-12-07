@@ -10,7 +10,7 @@ from app.services.session_service import SessionService
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(tags=["websocket"])
 
 # Store active WebSocket connections per session
 active_connections: Dict[str, Set[WebSocket]] = {}
@@ -61,11 +61,44 @@ async def websocket_endpoint(
     websocket: WebSocket,
     session_code: str,
 ):
-    """WebSocket endpoint for real-time collaboration."""
+    """
+    WebSocket endpoint for real-time collaboration.
+    
+    Connect to this endpoint using a WebSocket client. The session_code must be a valid existing session.
+    
+    **Message Types:**
+    
+    **Client to Server:**
+    - `code_change`: Update the code in the session
+      ```json
+      {"type": "code_change", "code": "print('Hello, World!')", "language": "python"}
+      ```
+    - `language_change`: Change the programming language
+      ```json
+      {"type": "language_change", "language": "javascript"}
+      ```
+    - `cursor_position`: Update cursor position (for future multi-cursor support)
+      ```json
+      {"type": "cursor_position", "userId": "user123", "position": {"line": 5, "column": 10}}
+      ```
+    
+    **Server to Client:**
+    - `code_update`: Broadcast code changes to all connected clients
+    - `language_update`: Broadcast language changes
+    - `cursor_update`: Broadcast cursor position updates
+    - `error`: Error message with details
+    
+    **Error Handling:**
+    The server will send error messages for invalid JSON, missing fields, unknown message types, or database failures.
+    
+    **Disconnection:**
+    The connection will be closed if the session doesn't exist (code 1008), an internal error occurs (code 1011), or the client disconnects normally.
+    
+    - **session_code**: The unique 8-character session code (case-insensitive)
+    """
     session_code = session_code.upper()
 
     # Verify session exists
-    from app.database import AsyncSessionLocal
     async with AsyncSessionLocal() as db:
         session = await SessionService.get_session_by_code(db, session_code)
         if not session:
