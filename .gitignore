@@ -101,7 +101,7 @@ yarn-error.log*
 lerna-debug.log*
 
 # Docker
-.dockerignore
+# Note: .dockerignore should be tracked in git
 
 # Testing
 coverage/
