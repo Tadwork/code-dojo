@@ -4,7 +4,7 @@
 services:
   # Main web service - builds from Dockerfile and serves both backend API and frontend
   - type: web
-    name: coddojo
+    name: codedojo
     runtime: docker # Use 'runtime' instead of deprecated 'env'
     dockerfilePath: ./Dockerfile
     dockerContext: .
@@ -24,7 +24,7 @@ services:
 
 # Render Postgres databases
 databases:
-  - name: coddojo-db
+  - name: codedojo-db
     plan: free # Free tier for development
     databaseName: coddojo # Database name within PostgreSQL instance
     region: virginia
