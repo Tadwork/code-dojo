@@ -17,10 +17,6 @@ services:
         value: 8000
       - key: ENVIRONMENT
         value: production
-      - key: DATABASE_URL
-        fromDatabase:
-          name: coddojo-db
-          property: connectionString
 
 # Render Postgres databases
 databases:
