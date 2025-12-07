@@ -1,11 +1,14 @@
 """WebSocket routes for real-time collaboration."""
 
 import json
+import logging
 from typing import Dict, Set
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.database import AsyncSessionLocal
 from app.services.session_service import SessionService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -83,59 +86,145 @@ async def websocket_endpoint(
                 })
 
         while True:
-            data = await websocket.receive_text()
-            message = json.loads(data)
+            try:
+                data = await websocket.receive_text()
+            except Exception as e:
+                logger.error(f"Error receiving WebSocket message: {e}")
+                break
 
-            if message["type"] == "code_change":
-                # Update code in database
-                async with AsyncSessionLocal() as db:
-                    await SessionService.update_session_code(
-                        db,
+            try:
+                message = json.loads(data)
+            except json.JSONDecodeError as e:
+                logger.warning(f"Invalid JSON received from client: {e}")
+                await websocket.send_json({
+                    "type": "error",
+                    "message": "Invalid JSON format",
+                })
+                continue
+
+            # Validate message has required 'type' field
+            if not isinstance(message, dict) or "type" not in message:
+                logger.warning(f"Message missing 'type' field: {message}")
+                await websocket.send_json({
+                    "type": "error",
+                    "message": "Message must contain a 'type' field",
+                })
+                continue
+
+            message_type = message["type"]
+
+            try:
+                if message_type == "code_change":
+                    # Validate required fields
+                    if "code" not in message:
+                        await websocket.send_json({
+                            "type": "error",
+                            "message": "code_change message must contain 'code' field",
+                        })
+                        continue
+
+                    # Update code in database
+                    try:
+                        async with AsyncSessionLocal() as db:
+                            await SessionService.update_session_code(
+                                db,
+                                session_code,
+                                message["code"],
+                            )
+                    except Exception as e:
+                        logger.error(f"Error updating session code: {e}")
+                        await websocket.send_json({
+                            "type": "error",
+                            "message": "Failed to update code in database",
+                        })
+                        continue
+
+                    # Broadcast to all other connections
+                    await manager.broadcast(
                         session_code,
-                        message["code"],
+                        {
+                            "type": "code_update",
+                            "code": message["code"],
+                            "language": message.get("language", "python"),
+                        },
+                        exclude=websocket,
                     )
 
-                # Broadcast to all other connections
-                await manager.broadcast(
-                    session_code,
-                    {
-                        "type": "code_update",
-                        "code": message["code"],
-                        "language": message.get("language", "python"),
-                    },
-                    exclude=websocket,
-                )
+                elif message_type == "language_change":
+                    # Validate required fields
+                    if "language" not in message:
+                        await websocket.send_json({
+                            "type": "error",
+                            "message": "language_change message must contain 'language' field",
+                        })
+                        continue
 
-            elif message["type"] == "language_change":
-                # Update language in database
-                async with AsyncSessionLocal() as db:
-                    await SessionService.update_session_language(
-                        db,
+                    # Update language in database
+                    try:
+                        async with AsyncSessionLocal() as db:
+                            await SessionService.update_session_language(
+                                db,
+                                session_code,
+                                message["language"],
+                            )
+                    except Exception as e:
+                        logger.error(f"Error updating session language: {e}")
+                        await websocket.send_json({
+                            "type": "error",
+                            "message": "Failed to update language in database",
+                        })
+                        continue
+
+                    # Broadcast to all connections
+                    await manager.broadcast(
                         session_code,
-                        message["language"],
+                        {
+                            "type": "language_update",
+                            "language": message["language"],
+                        },
                     )
 
-                # Broadcast to all connections
-                await manager.broadcast(
-                    session_code,
-                    {
-                        "type": "language_update",
-                        "language": message["language"],
-                    },
-                )
+                elif message_type == "cursor_position":
+                    # Broadcast cursor position (for future multi-cursor support)
+                    await manager.broadcast(
+                        session_code,
+                        {
+                            "type": "cursor_update",
+                            "userId": message.get("userId", "unknown"),
+                            "position": message.get("position"),
+                        },
+                        exclude=websocket,
+                    )
 
-            elif message["type"] == "cursor_position":
-                # Broadcast cursor position (for future multi-cursor support)
-                await manager.broadcast(
-                    session_code,
-                    {
-                        "type": "cursor_update",
-                        "userId": message.get("userId", "unknown"),
-                        "position": message.get("position"),
-                    },
-                    exclude=websocket,
-                )
+                else:
+                    # Unknown message type
+                    logger.warning(f"Unknown message type: {message_type}")
+                    await websocket.send_json({
+                        "type": "error",
+                        "message": f"Unknown message type: {message_type}",
+                    })
+
+            except KeyError as e:
+                logger.warning(f"Missing required field in message: {e}")
+                await websocket.send_json({
+                    "type": "error",
+                    "message": f"Missing required field: {e}",
+                })
+            except Exception as e:
+                logger.error(f"Unexpected error processing message: {e}", exc_info=True)
+                await websocket.send_json({
+                    "type": "error",
+                    "message": "An error occurred processing your message",
+                })
 
     except WebSocketDisconnect:
+        logger.info(f"WebSocket disconnected for session {session_code}")
+        manager.disconnect(websocket, session_code)
+    except Exception as e:
+        logger.error(f"Unexpected error in WebSocket handler: {e}", exc_info=True)
+        try:
+            await websocket.close(code=1011, reason="Internal server error")
+        except Exception:
+            pass
         manager.disconnect(websocket, session_code)
 
