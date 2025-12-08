@@ -94,12 +94,91 @@ const SessionPage = () => {
   };
 
   const getMonacoLanguage = (lang) => {
+    // Map our language identifiers to Monaco language IDs
     const languageMap = {
       python: 'python',
       javascript: 'javascript',
+      typescript: 'typescript',
+      java: 'java',
+      c: 'c',
+      cpp: 'cpp',
+      csharp: 'csharp',
+      go: 'go',
+      rust: 'rust',
+      ruby: 'ruby',
+      php: 'php',
+      swift: 'swift',
+      kotlin: 'kotlin',
+      scala: 'scala',
+      bash: 'shell',
+      perl: 'perl',
+      lua: 'lua',
+      r: 'r',
+      dart: 'dart',
+      elixir: 'elixir',
+      clojure: 'clojure',
+      haskell: 'haskell',
+      julia: 'julia',
+      pascal: 'pascal',
+      fsharp: 'fsharp',
+      nim: 'nim',
+      crystal: 'ruby', // Crystal syntax is similar to Ruby
+      sql: 'sql',
+      powershell: 'powershell',
+      erlang: 'erlang',
+      fortran: 'fortran',
+      cobol: 'cobol',
+      prolog: 'prolog',
+      lisp: 'scheme', // Use scheme for lisp-like syntax
+      ocaml: 'ocaml',
+      groovy: 'groovy',
+      d: 'd',
+      zig: 'zig',
     };
-    return languageMap[lang] || 'python';
+    return languageMap[lang] || 'plaintext';
   };
+
+  // Language options organized by category
+  const languageOptions = [
+    { value: 'python', label: 'Python' },
+    { value: 'javascript', label: 'JavaScript' },
+    { value: 'typescript', label: 'TypeScript' },
+    { value: 'java', label: 'Java' },
+    { value: 'c', label: 'C' },
+    { value: 'cpp', label: 'C++' },
+    { value: 'csharp', label: 'C#' },
+    { value: 'go', label: 'Go' },
+    { value: 'rust', label: 'Rust' },
+    { value: 'ruby', label: 'Ruby' },
+    { value: 'php', label: 'PHP' },
+    { value: 'swift', label: 'Swift' },
+    { value: 'kotlin', label: 'Kotlin' },
+    { value: 'scala', label: 'Scala' },
+    { value: 'bash', label: 'Bash' },
+    { value: 'perl', label: 'Perl' },
+    { value: 'lua', label: 'Lua' },
+    { value: 'r', label: 'R' },
+    { value: 'dart', label: 'Dart' },
+    { value: 'elixir', label: 'Elixir' },
+    { value: 'clojure', label: 'Clojure' },
+    { value: 'haskell', label: 'Haskell' },
+    { value: 'julia', label: 'Julia' },
+    { value: 'pascal', label: 'Pascal' },
+    { value: 'fsharp', label: 'F#' },
+    { value: 'nim', label: 'Nim' },
+    { value: 'crystal', label: 'Crystal' },
+    { value: 'sql', label: 'SQL' },
+    { value: 'powershell', label: 'PowerShell' },
+    { value: 'erlang', label: 'Erlang' },
+    { value: 'fortran', label: 'Fortran' },
+    { value: 'cobol', label: 'COBOL' },
+    { value: 'prolog', label: 'Prolog' },
+    { value: 'lisp', label: 'Lisp' },
+    { value: 'ocaml', label: 'OCaml' },
+    { value: 'groovy', label: 'Groovy' },
+    { value: 'd', label: 'D' },
+    { value: 'zig', label: 'Zig' },
+  ];
 
   if (loading) {
     return (
@@ -150,8 +229,11 @@ const SessionPage = () => {
             onChange={(e) => handleLanguageChange(e.target.value)}
             className="language-select"
           >
-            <option value="python">Python</option>
-            <option value="javascript">JavaScript</option>
+            {languageOptions.map((lang) => (
+              <option key={lang.value} value={lang.value}>
+                {lang.label}
+              </option>
+            ))}
           </select>
         </div>
       </div>

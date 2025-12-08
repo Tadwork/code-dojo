@@ -14,17 +14,17 @@ class ExecutionResponse(BaseModel):
     error: str = ""
 
 
-from app.services.piston import execute_source
+from app.services.piston import execute_source, SUPPORTED_LANGUAGES
 
 @router.post("/execute", response_model=ExecutionResponse)
 async def execute_code(request: ExecutionRequest):
     code = request.code
     language = request.language.lower()
 
-    if language not in ["python", "javascript"]:
+    if language not in SUPPORTED_LANGUAGES:
         raise HTTPException(
             status_code=400,
-            detail="Unsupported language. Only 'python' and 'javascript' are supported.",
+            detail=f"Unsupported language '{language}'. Supported: {', '.join(sorted(SUPPORTED_LANGUAGES))}",
         )
 
     result = await execute_source(language, code)

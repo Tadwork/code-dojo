@@ -7,6 +7,51 @@ PISTON_API_URL = os.environ.get("PISTON_URL", "https://emkc.org/api/v2/piston").
 
 logger = logging.getLogger(__name__)
 
+# Map our language names to Piston's
+LANG_MAP = {
+    "python": "python",
+    "javascript": "javascript",
+    "typescript": "typescript",
+    "java": "java",
+    "c": "c",
+    "cpp": "c++",
+    "csharp": "csharp",
+    "go": "go",
+    "rust": "rust",
+    "ruby": "ruby",
+    "php": "php",
+    "swift": "swift",
+    "kotlin": "kotlin",
+    "scala": "scala",
+    "bash": "bash",
+    "perl": "perl",
+    "lua": "lua",
+    "r": "rscript",
+    "dart": "dart",
+    "elixir": "elixir",
+    "clojure": "clojure",
+    "haskell": "haskell",
+    "julia": "julia",
+    "pascal": "pascal",
+    "fsharp": "fsharp.net",
+    "nim": "nim",
+    "crystal": "crystal",
+    "sql": "sqlite3",
+    "powershell": "powershell",
+    "erlang": "erlang",
+    "fortran": "fortran",
+    "cobol": "cobol",
+    "prolog": "prolog",
+    "lisp": "lisp",
+    "ocaml": "ocaml",
+    "groovy": "groovy",
+    "d": "d",
+    "zig": "zig",
+}
+
+# Supported languages for use by other modules
+SUPPORTED_LANGUAGES = set(LANG_MAP.keys())
+
 async def ensure_languages_installed():
     """
     Verifies connectivity to the Piston API and logs available runtimes.
@@ -29,14 +74,7 @@ async def execute_source(language: str, code: str) -> dict:
     """
     Executes code using the Piston API.
     """
-    
-    # Map our language names to Piston's
-    lang_map = {
-        "python": "python",
-        "javascript": "javascript" 
-    }
-    
-    piston_lang = lang_map.get(language, language)
+    piston_lang = LANG_MAP.get(language, language)
     
     payload = {
         "language": piston_lang,
