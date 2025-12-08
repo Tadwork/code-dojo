@@ -2,7 +2,9 @@
 
 import json
 import logging
-from typing import Dict, Set
+import uuid
+from dataclasses import dataclass
+from typing import Any, Dict, Optional, Set
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.database import AsyncSessionLocal
@@ -11,6 +13,33 @@ from app.services.session_service import SessionService
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["websocket"])
+
+# Color palette for participants
+PARTICIPANT_COLORS = [
+    "#FF6B6B",  # Red
+    "#4ECDC4",  # Teal
+    "#45B7D1",  # Sky Blue
+    "#96CEB4",  # Sage Green
+    "#FFEAA7",  # Yellow
+    "#DDA0DD",  # Plum
+    "#98D8C8",  # Mint
+    "#F7DC6F",  # Gold
+    "#BB8FCE",  # Purple
+    "#85C1E9",  # Light Blue
+]
+
+
+@dataclass
+class Participant:
+    """Represents a participant in a session."""
+
+    user_id: str
+    display_name: str
+    color: str
+    websocket: WebSocket
+    cursor: Optional[Dict[str, int]] = None
+    selection: Optional[Dict[str, Any]] = None
+
 
 # Store active WebSocket connections per session
 active_connections: Dict[str, Set[WebSocket]] = {}
@@ -22,20 +51,110 @@ class ConnectionManager:
     def __init__(self):
         """Initialize connection manager."""
         self.active_connections: Dict[str, Set[WebSocket]] = {}
+        self.participants: Dict[
+            str, Dict[str, Participant]
+        ] = {}  # session_code -> user_id -> Participant
+        self.websocket_to_user: Dict[
+            WebSocket, tuple[str, str]
+        ] = {}  # websocket -> (session_code, user_id)
 
-    async def connect(self, websocket: WebSocket, session_code: str):
-        """Accept a WebSocket connection."""
+    def _get_next_color(self, session_code: str) -> str:
+        """Get the next available color for a session."""
+        used_colors = set()
+        if session_code in self.participants:
+            used_colors = {p.color for p in self.participants[session_code].values()}
+        for color in PARTICIPANT_COLORS:
+            if color not in used_colors:
+                return color
+        # If all colors used, cycle through
+        return PARTICIPANT_COLORS[
+            len(self.participants.get(session_code, {})) % len(PARTICIPANT_COLORS)
+        ]
+
+    async def connect(
+        self, websocket: WebSocket, session_code: str, user_id: str, display_name: str
+    ) -> Participant:
+        """Accept a WebSocket connection and register participant."""
         await websocket.accept()
         if session_code not in self.active_connections:
             self.active_connections[session_code] = set()
         self.active_connections[session_code].add(websocket)
 
-    def disconnect(self, websocket: WebSocket, session_code: str):
-        """Remove a WebSocket connection."""
+        # Create participant
+        if session_code not in self.participants:
+            self.participants[session_code] = {}
+
+        color = self._get_next_color(session_code)
+        participant = Participant(
+            user_id=user_id,
+            display_name=display_name,
+            color=color,
+            websocket=websocket,
+        )
+        self.participants[session_code][user_id] = participant
+        self.websocket_to_user[websocket] = (session_code, user_id)
+
+        return participant
+
+    def disconnect(self, websocket: WebSocket, session_code: str) -> Optional[Participant]:
+        """Remove a WebSocket connection and return the participant info."""
+        participant = None
+
+        # Get participant info before removing
+        if websocket in self.websocket_to_user:
+            _, user_id = self.websocket_to_user[websocket]
+            if session_code in self.participants and user_id in self.participants[session_code]:
+                participant = self.participants[session_code].pop(user_id)
+            del self.websocket_to_user[websocket]
+
+            # Clean up empty sessions
+            if session_code in self.participants and not self.participants[session_code]:
+                del self.participants[session_code]
+
         if session_code in self.active_connections:
             self.active_connections[session_code].discard(websocket)
             if not self.active_connections[session_code]:
                 del self.active_connections[session_code]
+
+        return participant
+
+    def get_participant(self, websocket: WebSocket) -> Optional[Participant]:
+        """Get the participant associated with a websocket."""
+        if websocket in self.websocket_to_user:
+            session_code, user_id = self.websocket_to_user[websocket]
+            return self.participants.get(session_code, {}).get(user_id)
+        return None
+
+    def get_all_participants(self, session_code: str) -> list[Dict[str, Any]]:
+        """Get all participants in a session as serializable dicts."""
+        if session_code not in self.participants:
+            return []
+        return [
+            {
+                "userId": p.user_id,
+                "displayName": p.display_name,
+                "color": p.color,
+                "cursor": p.cursor,
+                "selection": p.selection,
+            }
+            for p in self.participants[session_code].values()
+        ]
+
+    def update_cursor(self, websocket: WebSocket, cursor: Dict[str, int]) -> Optional[Participant]:
+        """Update a participant's cursor position."""
+        participant = self.get_participant(websocket)
+        if participant:
+            participant.cursor = cursor
+        return participant
+
+    def update_selection(
+        self, websocket: WebSocket, selection: Dict[str, Any]
+    ) -> Optional[Participant]:
+        """Update a participant's selection."""
+        participant = self.get_participant(websocket)
+        if participant:
+            participant.selection = selection
+        return participant
 
     async def broadcast(self, session_code: str, message: dict, exclude: WebSocket = None):
         """Broadcast a message to all connections in a session."""
@@ -66,9 +185,18 @@ async def websocket_endpoint(
 
     Connect to this endpoint using a WebSocket client. The session_code must be a valid existing session.
 
+    **Connection Protocol:**
+    1. Connect to the WebSocket endpoint
+    2. First message MUST be a `join` message with userId and displayName
+    3. Server responds with `welcome` message containing participant info and existing participants
+
     **Message Types:**
 
     **Client to Server:**
+    - `join`: Register as a participant (REQUIRED as first message)
+      ```json
+      {"type": "join", "userId": "uuid-here", "displayName": "User 1"}
+      ```
     - `code_change`: Update the code in the session
       ```json
       {"type": "code_change", "code": "print('Hello, World!')", "language": "python"}
@@ -77,15 +205,23 @@ async def websocket_endpoint(
       ```json
       {"type": "language_change", "language": "javascript"}
       ```
-    - `cursor_position`: Update cursor position (for future multi-cursor support)
+    - `cursor_position`: Update cursor position
       ```json
-      {"type": "cursor_position", "userId": "user123", "position": {"line": 5, "column": 10}}
+      {"type": "cursor_position", "position": {"lineNumber": 5, "column": 10}}
+      ```
+    - `selection_change`: Update text selection
+      ```json
+      {"type": "selection_change", "selection": {"startLineNumber": 1, "startColumn": 1, "endLineNumber": 1, "endColumn": 10}}
       ```
 
     **Server to Client:**
+    - `welcome`: Sent after successful join with assigned color and participant list
+    - `participant_join`: Broadcast when a new participant joins
+    - `participant_leave`: Broadcast when a participant disconnects
     - `code_update`: Broadcast code changes to all connected clients
     - `language_update`: Broadcast language changes
     - `cursor_update`: Broadcast cursor position updates
+    - `selection_update`: Broadcast selection updates
     - `error`: Error message with details
 
     **Error Handling:**
@@ -97,6 +233,7 @@ async def websocket_endpoint(
     - **session_code**: The unique 8-character session code (case-insensitive)
     """
     session_code = session_code.upper()
+    participant = None
 
     # Verify session exists
     async with AsyncSessionLocal() as db:
@@ -105,20 +242,87 @@ async def websocket_endpoint(
             await websocket.close(code=1008, reason="Session not found")
             return
 
-    await manager.connect(websocket, session_code)
+    # Accept connection but don't register participant yet - wait for join message
+    await websocket.accept()
 
     try:
-        # Send current code to the new connection
+        # Wait for join message first
+        try:
+            data = await websocket.receive_text()
+            join_message = json.loads(data)
+        except WebSocketDisconnect:
+            logger.info(f"Client disconnected before sending join message for session {session_code}")
+            return
+        except Exception as e:
+            logger.error(f"Error receiving join message: {e}")
+            try:
+                await websocket.close(code=1008, reason="Failed to receive join message")
+            except Exception:
+                pass
+            return
+
+        if not isinstance(join_message, dict) or join_message.get("type") != "join":
+            await websocket.send_json(
+                {
+                    "type": "error",
+                    "message": "First message must be a 'join' message with userId and displayName",
+                }
+            )
+            await websocket.close(code=1008, reason="Invalid join message")
+            return
+
+        user_id = join_message.get("userId", str(uuid.uuid4()))
+        display_name = join_message.get("displayName", f"User {user_id[:4]}")
+
+        # Register participant (without calling accept again)
+        if session_code not in manager.active_connections:
+            manager.active_connections[session_code] = set()
+        manager.active_connections[session_code].add(websocket)
+
+        # Capture current participants before adding the new one so welcome payload excludes self
+        existing_participants = manager.get_all_participants(session_code)
+
+        if session_code not in manager.participants:
+            manager.participants[session_code] = {}
+
+        color = manager._get_next_color(session_code)
+        participant = Participant(
+            user_id=user_id,
+            display_name=display_name,
+            color=color,
+            websocket=websocket,
+        )
+        manager.participants[session_code][user_id] = participant
+        manager.websocket_to_user[websocket] = (session_code, user_id)
+
+        # Get current session state
         async with AsyncSessionLocal() as db:
             session = await SessionService.get_session_by_code(db, session_code)
-            if session:
-                await websocket.send_json(
-                    {
-                        "type": "code_update",
-                        "code": session.code,
-                        "language": session.language,
-                    }
-                )
+
+        # Send welcome message with participant info
+        await websocket.send_json(
+            {
+                "type": "welcome",
+                "userId": user_id,
+                "displayName": display_name,
+                "color": color,
+                "code": session.code if session else "",
+                "language": session.language if session else "python",
+                "participants": existing_participants,
+            }
+        )
+
+        # Broadcast participant join to others
+        await manager.broadcast(
+            session_code,
+            {
+                "type": "participant_join",
+                "userId": user_id,
+                "displayName": display_name,
+                "color": color,
+            },
+            exclude=websocket,
+        )
 
         while True:
             try:
@@ -232,16 +436,56 @@ async def websocket_endpoint(
                     )
 
                 elif message_type == "cursor_position":
-                    # Broadcast cursor position (for future multi-cursor support)
-                    await manager.broadcast(
-                        session_code,
-                        {
-                            "type": "cursor_update",
-                            "userId": message.get("userId", "unknown"),
-                            "position": message.get("position"),
-                        },
-                        exclude=websocket,
-                    )
+                    # Update and broadcast cursor position
+                    position = message.get("position")
+                    if not position:
+                        await websocket.send_json(
+                            {
+                                "type": "error",
+                                "message": "cursor_position message must contain 'position' field",
+                            }
+                        )
+                        continue
+
+                    updated_participant = manager.update_cursor(websocket, position)
+                    if updated_participant:
+                        await manager.broadcast(
+                            session_code,
+                            {
+                                "type": "cursor_update",
+                                "userId": updated_participant.user_id,
+                                "displayName": updated_participant.display_name,
+                                "color": updated_participant.color,
+                                "position": position,
+                            },
+                            exclude=websocket,
+                        )
+
+                elif message_type == "selection_change":
+                    # Update and broadcast selection
+                    selection = message.get("selection")
+                    if not selection:
+                        await websocket.send_json(
+                            {
+                                "type": "error",
+                                "message": "selection_change message must contain 'selection' field",
+                            }
+                        )
+                        continue
+
+                    updated_participant = manager.update_selection(websocket, selection)
+                    if updated_participant:
+                        await manager.broadcast(
+                            session_code,
+                            {
+                                "type": "selection_update",
+                                "userId": updated_participant.user_id,
+                                "displayName": updated_participant.display_name,
+                                "color": updated_participant.color,
+                                "selection": selection,
+                            },
+                            exclude=websocket,
+                        )
 
                 else:
                     # Unknown message type
@@ -272,11 +516,29 @@ async def websocket_endpoint(
 
     except WebSocketDisconnect:
         logger.info(f"WebSocket disconnected for session {session_code}")
-        manager.disconnect(websocket, session_code)
+        disconnected_participant = manager.disconnect(websocket, session_code)
+        if disconnected_participant:
+            await manager.broadcast(
+                session_code,
+                {
+                    "type": "participant_leave",
+                    "userId": disconnected_participant.user_id,
+                    "displayName": disconnected_participant.display_name,
+                },
+            )
     except Exception as e:
         logger.error(f"Unexpected error in WebSocket handler: {e}", exc_info=True)
+        disconnected_participant = manager.disconnect(websocket, session_code)
+        if disconnected_participant:
+            await manager.broadcast(
+                session_code,
+                {
+                    "type": "participant_leave",
+                    "userId": disconnected_participant.user_id,
+                    "displayName": disconnected_participant.display_name,
+                },
+            )
         try:
             await websocket.close(code=1011, reason="Internal server error")
         except Exception:
             pass
-        manager.disconnect(websocket, session_code)

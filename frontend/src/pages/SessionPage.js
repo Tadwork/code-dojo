@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
 import { getSession, generateCode } from '../services/api';
 import useWebSocket from '../hooks/useWebSocket';
 import CodeExecutor from '../components/CodeExecutor';
+import { hexToRgba } from '../utils/participantUtils';
 import './SessionPage.css';
 
 const SessionPage = () => {
@@ -16,7 +17,9 @@ const SessionPage = () => {
   const [error, setError] = useState(null);
   const [shareLink, setShareLink] = useState('');
   const editorRef = useRef(null);
+  const monacoRef = useRef(null);
   const isLocalChange = useRef(false);
+  const decorationsRef = useRef([]);
 
   // AI Assistant state
   const [aiPrompt, setAiPrompt] = useState('');
@@ -48,9 +51,9 @@ const SessionPage = () => {
   }, [sessionCode]);
 
   // WebSocket message handler
-  const handleWebSocketMessage = (message) => {
-    if (message.type === 'code_update') {
-      if (!isLocalChange.current) {
+  const handleWebSocketMessage = useCallback((message) => {
+    if (message.type === 'code_update' || message.type === 'welcome') {
+      if (!isLocalChange.current && message.code !== undefined) {
         setCode(message.code);
         if (message.language) {
           setLanguage(message.language);
@@ -59,12 +62,122 @@ const SessionPage = () => {
     } else if (message.type === 'language_update') {
       setLanguage(message.language);
     }
-  };
+  }, []);
 
-  const { isConnected, sendMessage } = useWebSocket(
-    sessionCode,
-    handleWebSocketMessage
-  );
+  const {
+    isConnected,
+    sendMessage,
+    sendCursorPosition,
+    sendSelection,
+    participants,
+    myInfo,
+  } = useWebSocket(sessionCode, handleWebSocketMessage);
+
+  // Update decorations for remote cursors and selections
+  useEffect(() => {
+    if (!editorRef.current || !monacoRef.current) return;
+
+    const editor = editorRef.current;
+    const monaco = monacoRef.current;
+    const newDecorations = [];
+
+    // Filter out our own cursor
+    const remoteParticipants = Object.values(participants).filter(
+      (p) => myInfo && p.userId !== myInfo.userId
+    );
+
+    remoteParticipants.forEach((participant) => {
+      // Add cursor decoration
+      if (participant.cursor) {
+        const { lineNumber, column } = participant.cursor;
+        if (lineNumber && column) {
+          // Cursor line decoration (colored left border)
+          newDecorations.push({
+            range: new monaco.Range(lineNumber, column, lineNumber, column + 1),
+            options: {
+              className: `remote-cursor-${participant.userId.replace(/-/g, '')}`,
+              beforeContentClassName: `remote-cursor-marker`,
+              stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
+            },
+          });
+        }
+      }
+
+      // Add selection decoration
+      if (participant.selection) {
+        const { startLineNumber, startColumn, endLineNumber, endColumn } =
+          participant.selection;
+        if (
+          startLineNumber &&
+          startColumn &&
+          endLineNumber &&
+          endColumn &&
+          (startLineNumber !== endLineNumber || startColumn !== endColumn)
+        ) {
+          newDecorations.push({
+            range: new monaco.Range(
+              startLineNumber,
+              startColumn,
+              endLineNumber,
+              endColumn
+            ),
+            options: {
+              className: `remote-selection-${participant.userId.replace(/-/g, '')}`,
+              stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
+            },
+          });
+        }
+      }
+    });
+
+    // Apply decorations
+    decorationsRef.current = editor.deltaDecorations(
+      decorationsRef.current,
+      newDecorations
+    );
+
+    // Inject dynamic CSS for participant colors
+    let styleEl = document.getElementById('participant-cursor-styles');
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = 'participant-cursor-styles';
+      document.head.appendChild(styleEl);
+    }
+
+    const cssRules = remoteParticipants
+      .map((p) => {
+        const safeId = p.userId.replace(/-/g, '');
+        return `
+          .remote-selection-${safeId} {
+            background-color: ${hexToRgba(p.color, 0.3)} !important;
+          }
+          .remote-cursor-${safeId}::before {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 18px;
+            background-color: ${p.color};
+            margin-left: -1px;
+          }
+          .remote-cursor-${safeId}::after {
+            content: '${p.displayName}';
+            position: absolute;
+            top: -18px;
+            left: 0;
+            background-color: ${p.color};
+            color: white;
+            font-size: 10px;
+            padding: 1px 4px;
+            border-radius: 2px;
+            white-space: nowrap;
+            z-index: 100;
+          }
+        `;
+      })
+      .join('\n');
+
+    styleEl.textContent = cssRules;
+  }, [participants, myInfo]);
 
   // Handle code changes
   const handleCodeChange = (value) => {
@@ -124,6 +237,31 @@ const SessionPage = () => {
     } finally {
       setAiLoading(false);
     }
+  };
+
+  // Handle editor mount
+  const handleEditorMount = (editor, monaco) => {
+    editorRef.current = editor;
+    monacoRef.current = monaco;
+
+    // Track cursor position changes
+    editor.onDidChangeCursorPosition((e) => {
+      sendCursorPosition({
+        lineNumber: e.position.lineNumber,
+        column: e.position.column,
+      });
+    });
+
+    // Track selection changes
+    editor.onDidChangeCursorSelection((e) => {
+      const sel = e.selection;
+      sendSelection({
+        startLineNumber: sel.startLineNumber,
+        startColumn: sel.startColumn,
+        endLineNumber: sel.endLineNumber,
+        endColumn: sel.endColumn,
+      });
+    });
   };
 
   const getMonacoLanguage = (lang) => {
@@ -213,6 +351,11 @@ const SessionPage = () => {
     { value: 'zig', label: 'Zig' },
   ];
 
+  // Get remote participants (excluding self)
+  const remoteParticipants = Object.values(participants).filter(
+    (p) => myInfo && p.userId !== myInfo.userId
+  );
+
   if (loading) {
     return (
       <div className="session-page">
@@ -240,6 +383,22 @@ const SessionPage = () => {
           <div className="session-code">Code: {sessionCode}</div>
         </div>
         <div className="session-controls">
+          {/* Participants Panel */}
+          {remoteParticipants.length > 0 && (
+            <div className="participants-panel">
+              {remoteParticipants.map((p) => (
+                <div key={p.userId} className="participant-chip" title={p.displayName}>
+                  <div
+                    className="participant-avatar"
+                    style={{ backgroundColor: p.color }}
+                  >
+                    {p.displayName.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="participant-name">{p.displayName}</span>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="connection-status">
             <span
               className={`status-indicator ${isConnected ? 'connected' : 'disconnected'}`}
@@ -309,9 +468,7 @@ const SessionPage = () => {
               wordWrap: 'on',
               automaticLayout: true,
             }}
-            onMount={(editor) => {
-              editorRef.current = editor;
-            }}
+            onMount={handleEditorMount}
           />
         </div>
 
@@ -324,3 +481,5 @@ const SessionPage = () => {
 };
 
 export default SessionPage;
+
+
