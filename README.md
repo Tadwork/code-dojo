@@ -168,6 +168,14 @@ CodeDojo is configured for easy deployment on [Render](https://render.com) using
 
 For AI-assisted development and best practices, see [Agents.md](./Agents.md).
 
+## Acknowledgments
+
+CodeDojo is built with the help of these amazing open-source projects and services:
+
+- **[Piston](https://github.com/engineer-man/piston)** - A high-performance code execution engine that powers our server-side code execution, supporting 50+ programming languages. We use the free public API at [emkc.org](https://emkc.org).
+
+- **[Pollinations AI](https://pollinations.ai)** - A free, open-source generative AI platform that powers our AI code generation assistant. No API key required.
+
 ## License
 
 MIT
@@ -175,4 +183,3 @@ MIT
 ## Contributing
 
 All contributions are welcome! Please open an issue or submit a pull request.
-

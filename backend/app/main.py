@@ -102,7 +102,7 @@ async def startup():
     """Initialize database and services on startup."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
+
     # Initialize Piston languages in background
     # We do this without awaiting to not block startup, or await if critical.
     # Logic in ensure_languages_installed handles errors gracefully.
