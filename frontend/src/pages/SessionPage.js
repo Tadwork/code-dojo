@@ -383,6 +383,7 @@ const SessionPage = () => {
           <div className="session-code">Code: {sessionCode}</div>
         </div>
         <div className="session-controls">
+         
           {/* Participants Panel */}
           {remoteParticipants.length > 0 && (
             <div className="participants-panel">
@@ -427,6 +428,15 @@ const SessionPage = () => {
               </option>
             ))}
           </select>
+           {/* Current Participant Display */}
+          {myInfo && (
+            <div className="current-participant" title={`You: ${myInfo.displayName}`}>
+              <div className="my-avatar" style={{ backgroundColor: myInfo.color }}>
+                {myInfo.displayName.charAt(0).toUpperCase()}
+              </div>
+              <span className="my-name">{myInfo.displayName}</span>
+            </div>
+          )}
         </div>
       </div>
 

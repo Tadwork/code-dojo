@@ -177,6 +177,27 @@ describe('SessionPage', () => {
     expect(screen.getByText('O')).toBeInTheDocument();
   });
 
+  it('should display current participant name in top right', async () => {
+    api.getSession.mockResolvedValue(mockSession);
+    useWebSocket.mockReturnValue({
+      isConnected: true,
+      sendMessage: mockSendMessage,
+      sendCursorPosition: mockSendCursorPosition,
+      sendSelection: mockSendSelection,
+      participants: {},
+      myInfo: { userId: 'test-user', displayName: 'Alice', color: '#FF6B6B' },
+    });
+
+    renderWithRouter(<SessionPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Alice')).toBeInTheDocument();
+    });
+    // Check for avatar with first letter
+    const avatars = screen.getAllByText('A');
+    expect(avatars.length).toBeGreaterThan(0);
+  });
+
   it('should allow changing language', async () => {
     api.getSession.mockResolvedValue(mockSession);
 
