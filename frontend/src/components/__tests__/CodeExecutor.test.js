@@ -1,9 +1,10 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import CodeExecutor from '../CodeExecutor';
+import { executeCode } from '../../services/api';
 
-// Mock fetch
-global.fetch = jest.fn();
+// Mock the API service
+jest.mock('../../services/api');
 
 describe('CodeExecutor', () => {
   beforeEach(() => {
@@ -26,10 +27,7 @@ describe('CodeExecutor', () => {
   });
 
   it('should execute JavaScript code via API', async () => {
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ output: 'hello', error: '' }),
-    });
+    executeCode.mockResolvedValueOnce({ output: 'hello', error: '' });
 
     render(<CodeExecutor code="console.log('hello')" language="javascript" />);
 
@@ -42,20 +40,11 @@ describe('CodeExecutor', () => {
       expect(screen.getByText('hello')).toBeInTheDocument();
     });
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/execute'),
-      expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify({ code: "console.log('hello')", language: 'javascript' }),
-      })
-    );
+    expect(executeCode).toHaveBeenCalledWith("console.log('hello')", 'javascript');
   });
 
   it('should handle execution errors from API', async () => {
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ output: '', error: 'SyntaxError: Unexpected token' }),
-    });
+    executeCode.mockResolvedValueOnce({ output: '', error: 'SyntaxError: Unexpected token' });
 
     render(<CodeExecutor code="invalid code" language="javascript" />);
 
@@ -69,7 +58,7 @@ describe('CodeExecutor', () => {
   });
 
   it('should handle network errors', async () => {
-    global.fetch.mockRejectedValueOnce(new Error('Network error'));
+    executeCode.mockRejectedValueOnce(new Error('Network error'));
 
     render(<CodeExecutor code="console.log('test')" language="javascript" />);
 
@@ -84,9 +73,9 @@ describe('CodeExecutor', () => {
 
   it('should disable run button while executing', async () => {
     // Delay resolution to check disabled state
-    global.fetch.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({
-      ok: true,
-      json: async () => ({ output: 'done', error: '' })
+    executeCode.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({
+      output: 'done',
+      error: ''
     }), 100)));
 
     render(<CodeExecutor code="console.log('test')" language="javascript" />);
