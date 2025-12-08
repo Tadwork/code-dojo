@@ -21,6 +21,7 @@ services:
         fromDatabase:
           name: codedojo-db
           property: connectionString
+      # Using public Piston API (https://emkc.org/api/v2/piston)
       # - key: CORS_ORIGINS
       #   value: ["https://codedojo-se9d.onrender.com"]
 
