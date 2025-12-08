@@ -184,25 +184,6 @@ async def serve_root():
     raise HTTPException(status_code=404, detail="SPA index not found")
 
 
-@app.get("/api/debug-files", tags=["health"])
-async def debug_files():
-    """List files in the static directory to debug deployment."""
-    files_list = []
-    try:
-        for root, dirs, files in os.walk(static_dir):
-            for file in files:
-                full_path = Path(root) / file
-                rel_path = full_path.relative_to(static_dir)
-                files_list.append(str(rel_path))
-        return {
-            "static_dir": str(static_dir),
-            "exists": static_dir.exists(),
-            "files": files_list[:100],  # Limit to 100 files
-        }
-    except Exception as e:
-        return {"error": str(e)}
-
-
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):
     """Serve React app for all non-API routes."""

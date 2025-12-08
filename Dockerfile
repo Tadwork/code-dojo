@@ -20,12 +20,12 @@ WORKDIR /app
 
 # Install system dependencies (including PostgreSQL development files for asyncpg)
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    build-essential \
-    curl \
-    postgresql-client \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
+  apt-get install -y --no-install-recommends \
+  build-essential \
+  curl \
+  postgresql-client \
+  libpq-dev \
+  && rm -rf /var/lib/apt/lists/*
 
 # Install uv
 RUN pip install --no-cache-dir uv
@@ -45,11 +45,11 @@ WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    curl \
-    postgresql-client \
-    libpq5 \
-    && rm -rf /var/lib/apt/lists/*
+  apt-get install -y --no-install-recommends \
+  curl \
+  postgresql-client \
+  libpq5 \
+  && rm -rf /var/lib/apt/lists/*
 
 # Install uv
 RUN pip install --no-cache-dir uv
@@ -73,4 +73,3 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 # Run the application using uv
 CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-
