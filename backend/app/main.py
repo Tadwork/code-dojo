@@ -15,7 +15,7 @@ except ImportError:
     yaml = None
 
 from app.config import settings
-from app.routes import sessions, websocket
+from app.routes import sessions, websocket, execution
 from app.database import engine, Base
 
 # Configure logging
@@ -41,6 +41,7 @@ app = FastAPI(
     * **Sessions**: Create and retrieve coding sessions
     * **WebSocket**: Real-time code synchronization and collaboration
     * **Health**: Application health check
+    * **Execution**: Secure server-side code execution
     
     ### Authentication
     
@@ -74,6 +75,10 @@ app = FastAPI(
             "description": "WebSocket endpoints for real-time collaboration. Connect to sync code changes, language updates, and cursor positions.",
         },
         {
+            "name": "execution",
+            "description": "Execute code on the server.",
+        },
+        {
             "name": "health",
             "description": "Health check and system status endpoints.",
         },
@@ -92,6 +97,7 @@ app.add_middleware(
 # Register API routes BEFORE static files so /api/* and /ws/* take precedence
 app.include_router(sessions.router)
 app.include_router(websocket.router)
+app.include_router(execution.router, prefix="/api", tags=["execution"])
 
 
 @app.on_event("startup")
@@ -188,7 +194,7 @@ async def debug_files():
         return {
             "static_dir": str(static_dir),
             "exists": static_dir.exists(),
-            "files": files_list[:100]  # Limit to 100 files
+            "files": files_list[:100],  # Limit to 100 files
         }
     except Exception as e:
         return {"error": str(e)}
@@ -202,10 +208,12 @@ async def serve_spa(full_path: str):
         raise HTTPException(status_code=404, detail="Not found")
 
     index_file = static_dir / "index.html"
-    logger.info(f"Serve SPA for path: {full_path}. Index file: {index_file}, exists: {index_file.exists()}")
-    
+    logger.info(
+        f"Serve SPA for path: {full_path}. Index file: {index_file}, exists: {index_file.exists()}"
+    )
+
     if index_file.exists():
         return FileResponse(index_file)
-    
+
     logger.error(f"SPA index not found for path: {full_path}")
     raise HTTPException(status_code=404, detail="SPA index not found")

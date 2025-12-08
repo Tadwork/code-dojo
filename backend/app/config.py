@@ -31,11 +31,8 @@ class Settings(BaseSettings):
     secret_key: str = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
 
     # CORS
-    cors_origins: list[str] = [
-        "http://localhost:3000",
-        "http://localhost:8000"
-    ]
-    
+    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:8000"]
+
     def get_cors_origins(self) -> list[str]:
         """Get CORS origins, adding the Render URL if in production."""
         origins = self.cors_origins.copy()

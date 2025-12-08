@@ -11,6 +11,10 @@ RUN apt-get update && \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Node.js
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs
+
 # Install uv
 RUN pip install --no-cache-dir uv
 
