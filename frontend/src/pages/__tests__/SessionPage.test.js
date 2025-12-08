@@ -7,15 +7,35 @@ import useWebSocket from '../../hooks/useWebSocket';
 
 jest.mock('../../services/api');
 jest.mock('../../hooks/useWebSocket');
+jest.mock('../../utils/participantUtils', () => ({
+  hexToRgba: (hex, alpha) => `rgba(0, 0, 0, ${alpha})`,
+}));
 jest.mock('@monaco-editor/react', () => ({
   __esModule: true,
-  default: ({ value, onChange }) => (
-    <textarea
-      data-testid="monaco-editor"
-      value={value}
-      onChange={(e) => onChange && onChange(e.target.value)}
-    />
-  ),
+  default: ({ value, onChange, onMount }) => {
+    // Simulate editor mount
+    if (onMount) {
+      const mockEditor = {
+        onDidChangeCursorPosition: jest.fn(),
+        onDidChangeCursorSelection: jest.fn(),
+        deltaDecorations: jest.fn(() => []),
+      };
+      const mockMonaco = {
+        Range: jest.fn(),
+        editor: {
+          TrackedRangeStickiness: { NeverGrowsWhenTypingAtEdges: 1 },
+        },
+      };
+      onMount(mockEditor, mockMonaco);
+    }
+    return (
+      <textarea
+        data-testid="monaco-editor"
+        value={value}
+        onChange={(e) => onChange && onChange(e.target.value)}
+      />
+    );
+  },
 }));
 
 const mockSession = {
@@ -40,12 +60,18 @@ const renderWithRouter = (component, initialEntries = ['/session/TEST1234']) => 
 
 describe('SessionPage', () => {
   const mockSendMessage = jest.fn();
+  const mockSendCursorPosition = jest.fn();
+  const mockSendSelection = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
     useWebSocket.mockReturnValue({
       isConnected: true,
       sendMessage: mockSendMessage,
+      sendCursorPosition: mockSendCursorPosition,
+      sendSelection: mockSendSelection,
+      participants: {},
+      myInfo: { userId: 'test-user', displayName: 'Test User', color: '#FF6B6B' },
     });
     global.navigator.clipboard = {
       writeText: jest.fn().mockResolvedValue(),
@@ -117,6 +143,10 @@ describe('SessionPage', () => {
     useWebSocket.mockReturnValue({
       isConnected: true,
       sendMessage: mockSendMessage,
+      sendCursorPosition: mockSendCursorPosition,
+      sendSelection: mockSendSelection,
+      participants: {},
+      myInfo: { userId: 'test-user', displayName: 'Test User', color: '#FF6B6B' },
     });
 
     renderWithRouter(<SessionPage />);
@@ -124,6 +154,48 @@ describe('SessionPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Connected')).toBeInTheDocument();
     });
+  });
+
+  it('should show participant names in the participants panel', async () => {
+    api.getSession.mockResolvedValue(mockSession);
+    useWebSocket.mockReturnValue({
+      isConnected: true,
+      sendMessage: mockSendMessage,
+      sendCursorPosition: mockSendCursorPosition,
+      sendSelection: mockSendSelection,
+      participants: {
+        'other-user': { userId: 'other-user', displayName: 'Other User', color: '#123456' },
+      },
+      myInfo: { userId: 'test-user', displayName: 'Test User', color: '#FF6B6B' },
+    });
+
+    renderWithRouter(<SessionPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Other User')).toBeInTheDocument();
+    });
+    expect(screen.getByText('O')).toBeInTheDocument();
+  });
+
+  it('should display current participant name in top right', async () => {
+    api.getSession.mockResolvedValue(mockSession);
+    useWebSocket.mockReturnValue({
+      isConnected: true,
+      sendMessage: mockSendMessage,
+      sendCursorPosition: mockSendCursorPosition,
+      sendSelection: mockSendSelection,
+      participants: {},
+      myInfo: { userId: 'test-user', displayName: 'Alice', color: '#FF6B6B' },
+    });
+
+    renderWithRouter(<SessionPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Alice')).toBeInTheDocument();
+    });
+    // Check for avatar with first letter
+    const avatars = screen.getAllByText('A');
+    expect(avatars.length).toBeGreaterThan(0);
   });
 
   it('should allow changing language', async () => {
@@ -307,3 +379,5 @@ describe('SessionPage', () => {
     });
   });
 });
+
+

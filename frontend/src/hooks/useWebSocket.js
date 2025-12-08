@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { getParticipantInfo } from '../utils/participantUtils';
 
 const stripTrailingSlash = (value) => (value || '').replace(/\/$/, '');
 const API_URL = stripTrailingSlash(process.env.REACT_APP_API_URL);
@@ -37,6 +38,8 @@ const resolveWsBase = () => {
 
 const useWebSocket = (sessionCode, onMessage) => {
   const [isConnected, setIsConnected] = useState(false);
+  const [participants, setParticipants] = useState({});
+  const [myInfo, setMyInfo] = useState(null);
   const wsRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
   const messageHandlerRef = useRef(onMessage);
@@ -46,15 +49,107 @@ const useWebSocket = (sessionCode, onMessage) => {
     messageHandlerRef.current = onMessage;
   }, [onMessage]);
 
+  // Handle incoming WebSocket messages
+  const handleMessage = useCallback((message) => {
+    console.log('[WS] Received message:', message.type, message);
+
+    switch (message.type) {
+      case 'welcome':
+        // We've successfully joined
+        console.log('[WS] Welcome - myInfo:', message.userId, message.displayName, message.color);
+        console.log('[WS] Welcome - participants:', message.participants);
+        setMyInfo({
+          userId: message.userId,
+          displayName: message.displayName,
+          color: message.color,
+        });
+        // Initialize participants map from list
+        const participantsMap = {};
+        if (message.participants) {
+          message.participants.forEach((p) => {
+            participantsMap[p.userId] = p;
+          });
+        }
+        setParticipants(participantsMap);
+        console.log('[WS] Set participants to:', participantsMap);
+        break;
+
+      case 'participant_join':
+        console.log('[WS] Participant joined:', message.userId, message.displayName);
+        setParticipants((prev) => {
+          const updated = {
+            ...prev,
+            [message.userId]: {
+              userId: message.userId,
+              displayName: message.displayName,
+              color: message.color,
+            },
+          };
+          console.log('[WS] Updated participants:', updated);
+          return updated;
+        });
+        break;
+
+      case 'participant_leave':
+        console.log('[WS] Participant left:', message.userId);
+        setParticipants((prev) => {
+          const updated = { ...prev };
+          delete updated[message.userId];
+          return updated;
+        });
+        break;
+
+      case 'cursor_update':
+        console.log('[WS] Cursor update:', message.userId, message.position);
+        setParticipants((prev) => ({
+          ...prev,
+          [message.userId]: {
+            ...prev[message.userId],
+            cursor: message.position,
+          },
+        }));
+        break;
+
+      case 'selection_update':
+        console.log('[WS] Selection update:', message.userId, message.selection);
+        setParticipants((prev) => ({
+          ...prev,
+          [message.userId]: {
+            ...prev[message.userId],
+            selection: message.selection,
+          },
+        }));
+        break;
+
+      default:
+        // Pass other messages to the handler
+        break;
+    }
+
+    // Always pass to external handler
+    if (messageHandlerRef.current) {
+      messageHandlerRef.current(message);
+    }
+  }, []);
+
   useEffect(() => {
     const wsUrl = `${resolveWsBase()}/ws/${sessionCode}`;
-    
+    const participantInfo = getParticipantInfo();
+
     const connect = () => {
       try {
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
         ws.onopen = () => {
+          // Send join message immediately after connection
+          ws.send(
+            JSON.stringify({
+              type: 'join',
+              userId: participantInfo.userId,
+              displayName: participantInfo.displayName,
+            })
+          );
           setIsConnected(true);
           if (reconnectTimeoutRef.current) {
             clearTimeout(reconnectTimeoutRef.current);
@@ -65,9 +160,7 @@ const useWebSocket = (sessionCode, onMessage) => {
         ws.onmessage = (event) => {
           try {
             const message = JSON.parse(event.data);
-            if (messageHandlerRef.current) {
-              messageHandlerRef.current(message);
-            }
+            handleMessage(message);
           } catch (error) {
             console.error('Error parsing WebSocket message:', error);
           }
@@ -103,16 +196,46 @@ const useWebSocket = (sessionCode, onMessage) => {
         wsRef.current.close();
       }
     };
-  }, [sessionCode]);
+  }, [sessionCode, handleMessage]);
 
-  const sendMessage = (message) => {
+  const sendMessage = useCallback((message) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(message));
     }
-  };
+  }, []);
 
-  return { isConnected, sendMessage };
+  // Send cursor position update
+  const sendCursorPosition = useCallback(
+    (position) => {
+      sendMessage({
+        type: 'cursor_position',
+        position,
+      });
+    },
+    [sendMessage]
+  );
+
+  // Send selection update
+  const sendSelection = useCallback(
+    (selection) => {
+      sendMessage({
+        type: 'selection_change',
+        selection,
+      });
+    },
+    [sendMessage]
+  );
+
+  return {
+    isConnected,
+    sendMessage,
+    sendCursorPosition,
+    sendSelection,
+    participants,
+    myInfo,
+  };
 };
 
 export default useWebSocket;
+
 
