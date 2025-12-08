@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 try:
     import yaml
 except ImportError:
-    yaml = None
+    yaml = None  # type: ignore[assignment]
 
 from app.config import settings
 from app.routes import sessions, websocket, execution
@@ -59,11 +59,7 @@ app = FastAPI(
         {
             "url": "http://localhost:8000",
             "description": "Development server",
-        },
-        {
-            "url": "https://api.coddojo.com",
-            "description": "Production server",
-        },
+        }
     ],
     tags_metadata=[
         {

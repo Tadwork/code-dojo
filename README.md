@@ -108,32 +108,12 @@ The services will be available at:
 
 ### Docker Production Build
 
-For production deployment as a single Docker image:
+To build and run the production image locally:
 
 ```bash
 docker build -t coddojo:latest .
-docker run -p 8000:8000 \
-  -e DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/dbname \
-  -e ENVIRONMENT=production \
-  -e SECRET_KEY=your-secret-key \
-  coddojo:latest
+docker run -p 8000:8000 --env-file backend/.env coddojo:latest
 ```
-
-### Docker Single-Image Local Run (SQLite, no dependencies)
-
-If you just want to run everything locally from the single image without Postgres:
-
-```bash
-docker build --no-cache -t coddojo:latest .
-docker run -p 8000:8000 \
-   -e ENVIRONMENT=development \
-   -e PORT=8000 \
-   -e DATABASE_URL=sqlite+aiosqlite:///./dev.db \
-   -e SECRET_KEY=dev-secret-key-change-in-production \
-   coddojo:latest
-```
-
-Then open http://localhost:8000/ — the backend API and the built frontend are served from the same container. SQLite will create `dev.db` inside the container on first run.
 
 ## Usage
 
@@ -154,8 +134,7 @@ Then open http://localhost:8000/ — the backend API and the built frontend are 
 
 4. **Execute Code**:
    - Click "Run Code" in the output panel
-   - JavaScript code runs in a Web Worker for safety
-   - Python code uses Pyodide (WebAssembly Python)
+   - Code is securely executed on the server (Node.js for JavaScript, Python environment for Python)
 
 ## API Endpoints
 
@@ -164,63 +143,12 @@ Then open http://localhost:8000/ — the backend API and the built frontend are 
 - `WS /ws/{session_code}` - WebSocket endpoint for real-time collaboration
 - `GET /api/health` - Health check endpoint
 
-## API Documentation (OpenAPI)
+## API Documentation
 
-The CodeDojo API includes comprehensive OpenAPI (Swagger) documentation that is automatically generated from the FastAPI application.
+The interactive API documentation is automatically generated and available at:
 
-### Accessing the Documentation
-
-During development, the API documentation is available at:
-
-- **Swagger UI (Interactive)**: http://localhost:8000/docs
-  - Interactive API explorer where you can test endpoints directly
-  - Includes request/response examples and schemas
-  
-- **ReDoc (Alternative UI)**: http://localhost:8000/redoc
-  - Clean, readable documentation interface
-  - Better for reading and understanding the API
-
-- **OpenAPI JSON**: http://localhost:8000/api/openapi.json
-  - Raw OpenAPI specification in JSON format
-  - Useful for importing into API clients or tools
-
-- **OpenAPI YAML**: http://localhost:8000/api/openapi.yaml
-  - Raw OpenAPI specification in YAML format
-  - Human-readable format for version control
-
-### Generating Static OpenAPI Files
-
-To generate static OpenAPI specification files for version control or external tools:
-
-```bash
-cd backend
-uv run python scripts/generate_openapi.py
-```
-
-This will create:
-- `backend/openapi/openapi.json` - JSON format
-- `backend/openapi/openapi.yaml` - YAML format
-
-### OpenAPI Features
-
-The API documentation includes:
-
-- **Comprehensive endpoint descriptions** with examples
-- **Request/response schemas** with validation rules
-- **Error responses** with status codes and descriptions
-- **WebSocket documentation** with message format specifications
-- **Tag-based organization** (sessions, websocket, health)
-- **Server configurations** for development and production environments
-
-### Using the OpenAPI Spec
-
-The OpenAPI specification can be used with:
-
-- **Postman**: Import the JSON/YAML file to create a collection
-- **Insomnia**: Import for API testing
-- **Code Generation**: Generate client SDKs using tools like `openapi-generator`
-- **API Gateway**: Import into API management platforms
-- **Documentation Tools**: Generate static documentation sites
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
 
 ## Database Schema
 
@@ -230,49 +158,11 @@ The application uses PostgreSQL with the following main table:
 
 ## Deployment
 
-### Render Blueprints (Infrastructure as Code)
+CodeDojo is configured for easy deployment on [Render](https://render.com) using Infrastructure as Code (IaC).
 
-CodeDojo uses **Render Blueprints** for infrastructure-as-code (IaC) deployment. A Blueprint is a `render.yaml` file that defines and manages multiple resources (services, databases, environment groups) from a single YAML configuration.
-
-#### Our Blueprint Configuration
-
-The `render.yaml` file at the root of this repository defines:
-
-1. **Web Service** (`coddojo`): 
-   - Builds from our multi-stage Dockerfile
-   - Serves both the FastAPI backend and React frontend
-   - Automatically connects to the PostgreSQL database
-   - Health checks at `/api/health`
-
-2. **PostgreSQL Database** (`coddojo-db`):
-   - Free tier instance for development
-   - Automatically provides connection string to the web service
-   - PostgreSQL 16
-
-#### Deploying with Blueprints
-
-1. **Initial Setup**:
-   - Go to [Render Dashboard](https://dashboard.render.com)
-   - Click **New > Blueprint**
-   - Connect your GitHub/GitLab repository
-   - Select the branch (e.g., `main`)
-   - Review and apply the Blueprint
-
-2. **Updating Infrastructure**:
-   - Modify `render.yaml` in your repository
-   - Commit and push to your linked branch
-   - Render automatically applies changes
-
-### Environment Variables for Production
-
-- `DATABASE_URL`: PostgreSQL connection string (automatically set by Blueprint)
-- `ENVIRONMENT`: Set to `production`
-- `SECRET_KEY`: Strong secret key for security
-- `PORT`: Port number (default: 8000)
-
-### Manual Deployment (Alternative)
-
-For manual deployment without Blueprints, see `Agents.md` for detailed instructions.
+1.  Go to the Render Dashboard and select **New > Blueprint**.
+2.  Connect your repository.
+3.  Render will automatically detect the `render.yaml` file and configure the service and database.
 
 ## Development Guidelines
 
@@ -280,9 +170,9 @@ For AI-assisted development and best practices, see [Agents.md](./Agents.md).
 
 ## License
 
-[Add your license here]
+MIT
 
 ## Contributing
 
-[Add contributing guidelines here]
+All contributions are welcome! Please open an issue or submit a pull request.
 
