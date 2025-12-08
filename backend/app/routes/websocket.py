@@ -251,7 +251,9 @@ async def websocket_endpoint(
             data = await websocket.receive_text()
             join_message = json.loads(data)
         except WebSocketDisconnect:
-            logger.info(f"Client disconnected before sending join message for session {session_code}")
+            logger.info(
+                f"Client disconnected before sending join message for session {session_code}"
+            )
             return
         except Exception as e:
             logger.error(f"Error receiving join message: {e}")

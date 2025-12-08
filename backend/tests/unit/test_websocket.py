@@ -25,9 +25,7 @@ class TestConnectionManager:
         mock_websocket = AsyncMock(spec=WebSocket)
         mock_websocket.accept = AsyncMock()
 
-        participant = await cm.connect(
-            mock_websocket, "TEST1234", "user-123", "Test User"
-        )
+        participant = await cm.connect(mock_websocket, "TEST1234", "user-123", "Test User")
 
         assert "TEST1234" in cm.active_connections
         assert mock_websocket in cm.active_connections["TEST1234"]
@@ -231,5 +229,3 @@ def test_welcome_message_excludes_self(client, monkeypatch):
             assert join_notice["userId"] == "user-2"
 
     reset_manager_state()
-
-
