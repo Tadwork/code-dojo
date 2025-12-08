@@ -1,6 +1,8 @@
 """Main FastAPI application."""
 
 import json
+import logging
+import os
 from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -15,6 +17,10 @@ except ImportError:
 from app.config import settings
 from app.routes import sessions, websocket
 from app.database import engine, Base
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="CodeDojo API",
@@ -158,10 +164,48 @@ if static_assets_dir.exists():
     app.mount("/static", StaticFiles(directory=static_assets_dir), name="static")
 
 
-@app.get("/{full_path:path}")
-async def serve_spa(_full_path: str):
-    """Serve React app for all non-API routes."""
+@app.get("/")
+async def serve_root():
+    """Serve the root index.html."""
     index_file = static_dir / "index.html"
+    logger.info(f"Serving root. Checking for index file at: {index_file}")
     if index_file.exists():
         return FileResponse(index_file)
+    logger.error(f"Root index file not found at: {index_file}")
+    raise HTTPException(status_code=404, detail="SPA index not found")
+
+
+@app.get("/api/debug-files", tags=["health"])
+async def debug_files():
+    """List files in the static directory to debug deployment."""
+    files_list = []
+    try:
+        for root, dirs, files in os.walk(static_dir):
+            for file in files:
+                full_path = Path(root) / file
+                rel_path = full_path.relative_to(static_dir)
+                files_list.append(str(rel_path))
+        return {
+            "static_dir": str(static_dir),
+            "exists": static_dir.exists(),
+            "files": files_list[:100]  # Limit to 100 files
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.get("/{full_path:path}")
+async def serve_spa(full_path: str):
+    """Serve React app for all non-API routes."""
+    # Skip API routes explicitly just in case regex catches them
+    if full_path.startswith("api/") or full_path.startswith("ws/"):
+        raise HTTPException(status_code=404, detail="Not found")
+
+    index_file = static_dir / "index.html"
+    logger.info(f"Serve SPA for path: {full_path}. Index file: {index_file}, exists: {index_file.exists()}")
+    
+    if index_file.exists():
+        return FileResponse(index_file)
+    
+    logger.error(f"SPA index not found for path: {full_path}")
     raise HTTPException(status_code=404, detail="SPA index not found")
