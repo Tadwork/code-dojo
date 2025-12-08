@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
-import { getSession } from '../services/api';
+import { getSession, generateCode } from '../services/api';
 import useWebSocket from '../hooks/useWebSocket';
 import CodeExecutor from '../components/CodeExecutor';
 import './SessionPage.css';
@@ -17,6 +17,11 @@ const SessionPage = () => {
   const [shareLink, setShareLink] = useState('');
   const editorRef = useRef(null);
   const isLocalChange = useRef(false);
+
+  // AI Assistant state
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
 
   // Initialize share link
   useEffect(() => {
@@ -91,6 +96,34 @@ const SessionPage = () => {
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareLink);
     alert('Link copied to clipboard!');
+  };
+
+  // AI Code Generation
+  const handleGenerateCode = async () => {
+    if (!aiPrompt.trim()) return;
+
+    setAiLoading(true);
+    setAiError('');
+
+    try {
+      const result = await generateCode(aiPrompt, code, language);
+      if (result.error) {
+        setAiError(result.error);
+      } else if (result.code) {
+        // Update code and sync via WebSocket
+        setCode(result.code);
+        sendMessage({
+          type: 'code_change',
+          code: result.code,
+          language: language,
+        });
+        setAiPrompt(''); // Clear prompt on success
+      }
+    } catch (err) {
+      setAiError(err.response?.data?.detail || 'Failed to generate code');
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const getMonacoLanguage = (lang) => {
@@ -238,6 +271,30 @@ const SessionPage = () => {
         </div>
       </div>
 
+      {/* AI Assistant Panel */}
+      <div className="ai-assistant-panel">
+        <div className="ai-assistant-input-group">
+          <span className="ai-icon">✨</span>
+          <input
+            type="text"
+            value={aiPrompt}
+            onChange={(e) => setAiPrompt(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !aiLoading && handleGenerateCode()}
+            placeholder="Ask AI to generate or modify code... (e.g., 'Add a function to sort an array')"
+            className="ai-prompt-input"
+            disabled={aiLoading}
+          />
+          <button
+            onClick={handleGenerateCode}
+            disabled={aiLoading || !aiPrompt.trim()}
+            className="ai-generate-button"
+          >
+            {aiLoading ? 'Generating...' : 'Generate'}
+          </button>
+        </div>
+        {aiError && <div className="ai-error">{aiError}</div>}
+      </div>
+
       <div className="session-content">
         <div className="editor-container">
           <Editor
@@ -267,4 +324,3 @@ const SessionPage = () => {
 };
 
 export default SessionPage;
-

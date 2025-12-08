@@ -14,7 +14,7 @@ except ImportError:
     yaml = None  # type: ignore[assignment]
 
 from app.config import settings
-from app.routes import sessions, websocket, execution
+from app.routes import sessions, websocket, execution, assistant
 from app.database import engine, Base
 from app.services.piston import ensure_languages_installed
 
@@ -94,6 +94,7 @@ app.add_middleware(
 app.include_router(sessions.router)
 app.include_router(websocket.router)
 app.include_router(execution.router, prefix="/api", tags=["execution"])
+app.include_router(assistant.router, prefix="/api", tags=["assistant"])
 
 
 @app.on_event("startup")

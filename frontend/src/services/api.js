@@ -38,5 +38,13 @@ export const executeCode = async (code, language) => {
   }
 };
 
-export default api;
+export const generateCode = async (prompt, code, language) => {
+  const response = await api.post('/api/assistant/generate', {
+    prompt,
+    code,
+    language,
+  });
+  return response.data;
+};
 
+export default api;
