@@ -176,5 +176,134 @@ describe('SessionPage', () => {
       expect(screen.getByText('Code Output')).toBeInTheDocument();
     });
   });
-});
 
+  describe('AI Assistant', () => {
+    it('should render AI assistant panel', async () => {
+      api.getSession.mockResolvedValue(mockSession);
+
+      renderWithRouter(<SessionPage />);
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText(/Ask AI to generate/i)).toBeInTheDocument();
+      });
+      expect(screen.getByText('Generate')).toBeInTheDocument();
+    });
+
+    it('should allow entering AI prompt', async () => {
+      api.getSession.mockResolvedValue(mockSession);
+
+      renderWithRouter(<SessionPage />);
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText(/Ask AI to generate/i)).toBeInTheDocument();
+      });
+
+      const promptInput = screen.getByPlaceholderText(/Ask AI to generate/i);
+      fireEvent.change(promptInput, { target: { value: 'Create a hello function' } });
+
+      expect(promptInput.value).toBe('Create a hello function');
+    });
+
+    it('should disable generate button when prompt is empty', async () => {
+      api.getSession.mockResolvedValue(mockSession);
+
+      renderWithRouter(<SessionPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Generate')).toBeInTheDocument();
+      });
+
+      const generateButton = screen.getByText('Generate');
+      expect(generateButton).toBeDisabled();
+    });
+
+    it('should enable generate button when prompt has content', async () => {
+      api.getSession.mockResolvedValue(mockSession);
+
+      renderWithRouter(<SessionPage />);
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText(/Ask AI to generate/i)).toBeInTheDocument();
+      });
+
+      const promptInput = screen.getByPlaceholderText(/Ask AI to generate/i);
+      fireEvent.change(promptInput, { target: { value: 'Create something' } });
+
+      const generateButton = screen.getByText('Generate');
+      expect(generateButton).not.toBeDisabled();
+    });
+
+    it('should call generateCode API when clicking Generate', async () => {
+      api.getSession.mockResolvedValue(mockSession);
+      api.generateCode = jest.fn().mockResolvedValue({
+        code: 'def hello():\n    print("Hello")',
+        error: '',
+      });
+
+      renderWithRouter(<SessionPage />);
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText(/Ask AI to generate/i)).toBeInTheDocument();
+      });
+
+      const promptInput = screen.getByPlaceholderText(/Ask AI to generate/i);
+      fireEvent.change(promptInput, { target: { value: 'Create a hello function' } });
+
+      const generateButton = screen.getByText('Generate');
+      fireEvent.click(generateButton);
+
+      await waitFor(() => {
+        expect(api.generateCode).toHaveBeenCalledWith(
+          'Create a hello function',
+          'print("hello")',
+          'python'
+        );
+      });
+    });
+
+    it('should show loading state during generation', async () => {
+      api.getSession.mockResolvedValue(mockSession);
+      api.generateCode = jest.fn().mockImplementation(
+        () => new Promise((resolve) => setTimeout(() => resolve({ code: 'test', error: '' }), 100))
+      );
+
+      renderWithRouter(<SessionPage />);
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText(/Ask AI to generate/i)).toBeInTheDocument();
+      });
+
+      const promptInput = screen.getByPlaceholderText(/Ask AI to generate/i);
+      fireEvent.change(promptInput, { target: { value: 'Create something' } });
+
+      const generateButton = screen.getByText('Generate');
+      fireEvent.click(generateButton);
+
+      expect(screen.getByText('Generating...')).toBeInTheDocument();
+    });
+
+    it('should display AI error message', async () => {
+      api.getSession.mockResolvedValue(mockSession);
+      api.generateCode = jest.fn().mockResolvedValue({
+        code: '',
+        error: 'AI service unavailable',
+      });
+
+      renderWithRouter(<SessionPage />);
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText(/Ask AI to generate/i)).toBeInTheDocument();
+      });
+
+      const promptInput = screen.getByPlaceholderText(/Ask AI to generate/i);
+      fireEvent.change(promptInput, { target: { value: 'Create something' } });
+
+      const generateButton = screen.getByText('Generate');
+      fireEvent.click(generateButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('AI service unavailable')).toBeInTheDocument();
+      });
+    });
+  });
+});
