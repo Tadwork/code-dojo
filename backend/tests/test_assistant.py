@@ -1,7 +1,6 @@
 """Tests for AI assistant route."""
 
 from unittest.mock import patch, AsyncMock
-import pytest
 from fastapi.testclient import TestClient
 from app.main import app
 
