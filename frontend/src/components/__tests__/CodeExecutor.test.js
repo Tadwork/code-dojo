@@ -102,7 +102,7 @@ describe('CodeExecutor', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/Code execution for java is not yet supported/i)
+        screen.getByText(/Unsupported language. Only Python and JavaScript are supported./i)
       ).toBeInTheDocument();
     });
   });

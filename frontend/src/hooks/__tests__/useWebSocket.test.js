@@ -77,6 +77,15 @@ describe('useWebSocket', () => {
     jest.clearAllMocks();
     mockWebSocketInstances.length = 0;
     global.WebSocket.mockImplementation((url) => new MockWebSocket(url));
+
+    Object.defineProperty(window, 'location', {
+      value: {
+        href: 'http://localhost:3000',
+        protocol: 'http:',
+        host: 'localhost:3000',
+      },
+      writable: true,
+    });
   });
 
   it('should initialize WebSocket connection', () => {
