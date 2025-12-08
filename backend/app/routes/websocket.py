@@ -438,13 +438,46 @@ async def websocket_endpoint(
                     )
 
                 elif message_type == "cursor_position":
-                    # Update and broadcast cursor position
+                    # Validate and broadcast cursor position
                     position = message.get("position")
                     if not position:
                         await websocket.send_json(
                             {
                                 "type": "error",
                                 "message": "cursor_position message must contain 'position' field",
+                            }
+                        )
+                        continue
+
+                    # Validate position is a dictionary
+                    if not isinstance(position, dict):
+                        await websocket.send_json(
+                            {
+                                "type": "error",
+                                "message": "position must be a dictionary",
+                            }
+                        )
+                        continue
+
+                    # Validate required fields
+                    if not all(k in position for k in ["lineNumber", "column"]):
+                        await websocket.send_json(
+                            {
+                                "type": "error",
+                                "message": "position must contain lineNumber and column",
+                            }
+                        )
+                        continue
+
+                    # Validate values are positive integers
+                    if not all(
+                        isinstance(position[k], int) and position[k] > 0
+                        for k in ["lineNumber", "column"]
+                    ):
+                        await websocket.send_json(
+                            {
+                                "type": "error",
+                                "message": "lineNumber and column must be positive integers",
                             }
                         )
                         continue
