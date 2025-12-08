@@ -2,7 +2,6 @@
 
 import json
 import logging
-import os
 from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -17,6 +16,7 @@ except ImportError:
 from app.config import settings
 from app.routes import sessions, websocket, execution
 from app.database import engine, Base
+from app.services.piston import ensure_languages_installed
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -95,8 +95,6 @@ app.include_router(sessions.router)
 app.include_router(websocket.router)
 app.include_router(execution.router, prefix="/api", tags=["execution"])
 
-
-from app.services.piston import ensure_languages_installed
 
 @app.on_event("startup")
 async def startup():

@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from app.services.piston import execute_source, SUPPORTED_LANGUAGES
+
 router = APIRouter()
 
 
@@ -13,8 +15,6 @@ class ExecutionResponse(BaseModel):
     output: str
     error: str = ""
 
-
-from app.services.piston import execute_source, SUPPORTED_LANGUAGES
 
 @router.post("/execute", response_model=ExecutionResponse)
 async def execute_code(request: ExecutionRequest):
