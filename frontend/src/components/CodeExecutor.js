@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { executeCode as executeCodeFromAPI } from '../services/api';
 import './CodeExecutor.css';
 
 const CodeExecutor = ({ code, language }) => {
@@ -27,19 +28,13 @@ const CodeExecutor = ({ code, language }) => {
     setError('');
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/execute`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ code, language }),
-      });
+      console.log('Calling executeCode service...');
+      const data = await executeCodeFromAPI(code, language);
+      console.log('Received data from service:', data);
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
+      if (!data) {
+        throw new Error('No data received from server');
       }
-
-      const data = await response.json();
 
       if (data.error) {
         setError(data.error);
@@ -47,7 +42,7 @@ const CodeExecutor = ({ code, language }) => {
       setOutput(data.output);
 
     } catch (err) {
-      setError(err.message || 'Execution error');
+      setError(err.response?.data?.detail || err.message || 'Execution error');
     } finally {
       setIsRunning(false);
     }

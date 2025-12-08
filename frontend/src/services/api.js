@@ -23,5 +23,20 @@ export const getSession = async (sessionCode) => {
   return response.data;
 };
 
+export const executeCode = async (code, language) => {
+  console.log('executeCode called with:', { code, language });
+  try {
+    const response = await api.post('/api/execute', {
+      code,
+      language,
+    });
+    console.log('executeCode response:', response);
+    return response.data;
+  } catch (error) {
+    console.error('executeCode error:', error);
+    throw error;
+  }
+};
+
 export default api;
 
