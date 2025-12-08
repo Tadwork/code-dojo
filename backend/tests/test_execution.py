@@ -41,9 +41,6 @@ def test_execute_javascript_success():
 
 def test_execute_unsupported_language():
     """Test that unsupported languages return 400."""
-    response = client.post(
-        "/api/execute", json={"code": "print('hello')", "language": "brainfuck"}
-    )
+    response = client.post("/api/execute", json={"code": "print('hello')", "language": "brainfuck"})
     assert response.status_code == 400
     assert "Unsupported language" in response.json()["detail"]
-

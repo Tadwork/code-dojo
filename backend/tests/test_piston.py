@@ -76,9 +76,7 @@ class TestExecuteSource:
     async def test_execute_python_success(self):
         """Test successful Python execution."""
         mock_response = MagicMock()
-        mock_response.json.return_value = {
-            "run": {"stdout": "Hello\n", "stderr": "", "code": 0}
-        }
+        mock_response.json.return_value = {"run": {"stdout": "Hello\n", "stderr": "", "code": 0}}
         mock_response.raise_for_status = MagicMock()
 
         with patch("httpx.AsyncClient") as mock_client:
@@ -183,9 +181,7 @@ class TestExecuteSource:
     async def test_execute_language_mapping(self):
         """Test that language mapping works correctly."""
         mock_response = MagicMock()
-        mock_response.json.return_value = {
-            "run": {"stdout": "test", "stderr": "", "code": 0}
-        }
+        mock_response.json.return_value = {"run": {"stdout": "test", "stderr": "", "code": 0}}
         mock_response.raise_for_status = MagicMock()
 
         with patch("httpx.AsyncClient") as mock_client:
