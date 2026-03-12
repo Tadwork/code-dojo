@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
-from e2b_code_interpreter import AsyncSandbox
+from e2b_code_interpreter import AsyncSandbox  # type: ignore[import-untyped]
 
 from app.config import settings
 
@@ -22,7 +23,7 @@ def _format_logs(lines: list[str]) -> str:
     return "".join(lines)
 
 
-def _format_error(execution) -> str:
+def _format_error(execution: Any) -> str:
     """Extract a useful error string from an E2B execution result."""
     stderr = _format_logs(execution.logs.stderr)
     if stderr:
@@ -34,7 +35,7 @@ def _format_error(execution) -> str:
     return ""
 
 
-def _format_output(execution) -> str:
+def _format_output(execution: Any) -> str:
     """Extract stdout or expression result text from an E2B execution result."""
     stdout = _format_logs(execution.logs.stdout)
     if stdout:
@@ -54,7 +55,7 @@ async def ensure_execution_service_ready() -> None:
     )
 
 
-async def execute_source(language: str, code: str) -> dict:
+async def execute_source(language: str, code: str) -> dict[str, str]:
     """Execute code in an ephemeral E2B sandbox."""
     if not settings.e2b_api_key:
         return {"output": "", "error": "Execution service unavailable: E2B_API_KEY is not set"}

@@ -168,7 +168,12 @@ class ConnectionManager:
             participant.selection = selection
         return participant
 
-    async def broadcast(self, session_code: str, message: dict, exclude: WebSocket = None):
+    async def broadcast(
+        self,
+        session_code: str,
+        message: dict[str, Any],
+        exclude: WebSocket | None = None,
+    ) -> None:
         """Broadcast a message to all connections in a session."""
         if session_code in self.active_connections:
             disconnected = set()
@@ -295,7 +300,7 @@ async def broadcast_participant_leave(
     )
 
 
-def validate_position(position: Any) -> None:
+def validate_position(position: Any) -> Dict[str, int]:
     """Validate a cursor position payload."""
     if not position:
         raise ValueError("cursor_position message must contain 'position' field")
@@ -307,6 +312,7 @@ def validate_position(position: Any) -> None:
         isinstance(position[key], int) and position[key] > 0 for key in ["lineNumber", "column"]
     ):
         raise ValueError("lineNumber and column must be positive integers")
+    return {"lineNumber": position["lineNumber"], "column": position["column"]}
 
 
 async def handle_code_change(session_code: str, message: dict, websocket: WebSocket) -> None:
@@ -357,8 +363,7 @@ async def handle_language_change(session_code: str, message: dict) -> None:
 
 async def handle_cursor_position(session_code: str, message: dict, websocket: WebSocket) -> None:
     """Update a participant cursor and broadcast it."""
-    position = message.get("position")
-    validate_position(position)
+    position = validate_position(message.get("position"))
 
     updated_participant = manager.update_cursor(websocket, position)
     if not updated_participant:
