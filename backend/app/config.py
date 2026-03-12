@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     environment: str = os.getenv("ENVIRONMENT", "development")
     port: int = int(os.getenv("PORT", "8000"))
     secret_key: str = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
+    e2b_api_key: str = os.getenv("E2B_API_KEY", "")
+    execution_timeout_seconds: float = float(os.getenv("EXECUTION_TIMEOUT_SECONDS", "10"))
+    execution_request_timeout_seconds: float = float(
+        os.getenv("EXECUTION_REQUEST_TIMEOUT_SECONDS", "15")
+    )
 
     # CORS
     cors_origins: list[str] = ["http://localhost:3000", "http://localhost:8000"]

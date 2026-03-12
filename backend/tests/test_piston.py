@@ -1,14 +1,14 @@
-"""Tests for Piston service."""
+"""Tests for the E2B-backed code execution service."""
 
+import logging
 import pytest
-from unittest.mock import patch, AsyncMock, MagicMock
-import httpx
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, patch
 
-from app.services.piston import (
+from app.services.code_execution import (
     execute_source,
-    ensure_languages_installed,
+    ensure_execution_service_ready,
     SUPPORTED_LANGUAGES,
-    LANG_MAP,
 )
 
 
@@ -27,46 +27,25 @@ class TestSupportedLanguages:
         """Test that JavaScript is supported."""
         assert "javascript" in SUPPORTED_LANGUAGES
 
-    def test_lang_map_matches_supported(self):
-        """Test that LANG_MAP keys match SUPPORTED_LANGUAGES."""
-        assert set(LANG_MAP.keys()) == SUPPORTED_LANGUAGES
-
-
-class TestEnsureLanguagesInstalled:
-    """Tests for ensure_languages_installed function."""
+class TestEnsureExecutionServiceReady:
+    """Tests for ensure_execution_service_ready."""
 
     @pytest.mark.asyncio
-    async def test_ensure_languages_success(self):
-        """Test successful connection to Piston API."""
-        mock_response = MagicMock()
-        mock_response.json.return_value = [
-            {"language": "python", "version": "3.10.0"},
-            {"language": "javascript", "version": "18.0.0"},
-        ]
-        mock_response.raise_for_status = MagicMock()
+    async def test_logs_when_key_configured(self, caplog):
+        """Test readiness logging when E2B is configured."""
+        caplog.set_level(logging.INFO)
+        with patch("app.services.code_execution.settings.e2b_api_key", "test-key"):
+            await ensure_execution_service_ready()
 
-        with patch("httpx.AsyncClient") as mock_client:
-            mock_instance = AsyncMock()
-            mock_instance.get.return_value = mock_response
-            mock_instance.__aenter__.return_value = mock_instance
-            mock_instance.__aexit__.return_value = None
-            mock_client.return_value = mock_instance
-
-            # Should not raise
-            await ensure_languages_installed()
+        assert "E2B execution service configured" in caplog.text
 
     @pytest.mark.asyncio
-    async def test_ensure_languages_connection_error(self):
-        """Test handling of connection errors."""
-        with patch("httpx.AsyncClient") as mock_client:
-            mock_instance = AsyncMock()
-            mock_instance.get.side_effect = Exception("Connection failed")
-            mock_instance.__aenter__.return_value = mock_instance
-            mock_instance.__aexit__.return_value = None
-            mock_client.return_value = mock_instance
+    async def test_warns_when_key_missing(self, caplog):
+        """Test readiness warning when E2B is not configured."""
+        with patch("app.services.code_execution.settings.e2b_api_key", ""):
+            await ensure_execution_service_ready()
 
-            # Should not raise, just log error
-            await ensure_languages_installed()
+        assert "E2B_API_KEY is not configured" in caplog.text
 
 
 class TestExecuteSource:
@@ -75,126 +54,124 @@ class TestExecuteSource:
     @pytest.mark.asyncio
     async def test_execute_python_success(self):
         """Test successful Python execution."""
-        mock_response = MagicMock()
-        mock_response.json.return_value = {"run": {"stdout": "Hello\n", "stderr": "", "code": 0}}
-        mock_response.raise_for_status = MagicMock()
+        mock_execution = SimpleNamespace(
+            logs=SimpleNamespace(stdout=["Hello\n"], stderr=[]),
+            error=None,
+            text=None,
+        )
+        mock_sandbox = AsyncMock()
+        mock_sandbox.run_code.return_value = mock_execution
 
-        with patch("httpx.AsyncClient") as mock_client:
-            mock_instance = AsyncMock()
-            mock_instance.post.return_value = mock_response
-            mock_instance.__aenter__.return_value = mock_instance
-            mock_instance.__aexit__.return_value = None
-            mock_client.return_value = mock_instance
-
+        with patch("app.services.code_execution.settings.e2b_api_key", "test-key"), patch(
+            "app.services.code_execution.AsyncSandbox.create",
+            new=AsyncMock(return_value=mock_sandbox),
+        ):
             result = await execute_source("python", "print('Hello')")
 
             assert result["output"] == "Hello\n"
             assert result["error"] == ""
+            mock_sandbox.run_code.assert_awaited_once()
+            mock_sandbox.kill.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_execute_with_stderr(self):
         """Test execution with stderr output."""
-        mock_response = MagicMock()
-        mock_response.json.return_value = {
-            "run": {"stdout": "", "stderr": "Error occurred", "code": 1}
-        }
-        mock_response.raise_for_status = MagicMock()
+        mock_execution = SimpleNamespace(
+            logs=SimpleNamespace(stdout=[], stderr=["Error occurred"]),
+            error=None,
+            text=None,
+        )
+        mock_sandbox = AsyncMock()
+        mock_sandbox.run_code.return_value = mock_execution
 
-        with patch("httpx.AsyncClient") as mock_client:
-            mock_instance = AsyncMock()
-            mock_instance.post.return_value = mock_response
-            mock_instance.__aenter__.return_value = mock_instance
-            mock_instance.__aexit__.return_value = None
-            mock_client.return_value = mock_instance
-
+        with patch("app.services.code_execution.settings.e2b_api_key", "test-key"), patch(
+            "app.services.code_execution.AsyncSandbox.create",
+            new=AsyncMock(return_value=mock_sandbox),
+        ):
             result = await execute_source("python", "raise Exception()")
 
             assert result["error"] == "Error occurred"
 
     @pytest.mark.asyncio
-    async def test_execute_invalid_response(self):
-        """Test handling of invalid API response."""
-        mock_response = MagicMock()
-        mock_response.json.return_value = {}  # Missing 'run' key
-        mock_response.raise_for_status = MagicMock()
+    async def test_execute_returns_expression_text(self):
+        """Test returning expression text when stdout is empty."""
+        mock_execution = SimpleNamespace(
+            logs=SimpleNamespace(stdout=[], stderr=[]),
+            error=None,
+            text="2",
+        )
+        mock_sandbox = AsyncMock()
+        mock_sandbox.run_code.return_value = mock_execution
 
-        with patch("httpx.AsyncClient") as mock_client:
-            mock_instance = AsyncMock()
-            mock_instance.post.return_value = mock_response
-            mock_instance.__aenter__.return_value = mock_instance
-            mock_instance.__aexit__.return_value = None
-            mock_client.return_value = mock_instance
+        with patch("app.services.code_execution.settings.e2b_api_key", "test-key"), patch(
+            "app.services.code_execution.AsyncSandbox.create",
+            new=AsyncMock(return_value=mock_sandbox),
+        ):
+            result = await execute_source("python", "1 + 1")
 
-            result = await execute_source("python", "print('test')")
-
-            assert result["error"] == "Invalid response from execution engine"
-
-    @pytest.mark.asyncio
-    async def test_execute_http_error(self):
-        """Test handling of HTTP errors."""
-        mock_response = MagicMock()
-        mock_response.status_code = 500
-        mock_response.text = "Internal Server Error"
-
-        with patch("httpx.AsyncClient") as mock_client:
-            mock_instance = AsyncMock()
-            mock_instance.post.side_effect = httpx.HTTPStatusError(
-                "Server error", request=MagicMock(), response=mock_response
-            )
-            mock_instance.__aenter__.return_value = mock_instance
-            mock_instance.__aexit__.return_value = None
-            mock_client.return_value = mock_instance
-
-            result = await execute_source("python", "print('test')")
-
-            assert "Execution failed" in result["error"]
+            assert result["output"] == "2"
 
     @pytest.mark.asyncio
-    async def test_execute_connection_error(self):
-        """Test handling of connection errors."""
-        with patch("httpx.AsyncClient") as mock_client:
-            mock_instance = AsyncMock()
-            mock_instance.post.side_effect = httpx.RequestError("Connection failed")
-            mock_instance.__aenter__.return_value = mock_instance
-            mock_instance.__aexit__.return_value = None
-            mock_client.return_value = mock_instance
+    async def test_execute_handles_execution_error(self):
+        """Test returning structured execution errors from E2B."""
+        mock_execution = SimpleNamespace(
+            logs=SimpleNamespace(stdout=[], stderr=[]),
+            error=SimpleNamespace(
+                traceback="Traceback...",
+                value="name 'x' is not defined",
+                name="NameError",
+            ),
+            text=None,
+        )
+        mock_sandbox = AsyncMock()
+        mock_sandbox.run_code.return_value = mock_execution
 
+        with patch("app.services.code_execution.settings.e2b_api_key", "test-key"), patch(
+            "app.services.code_execution.AsyncSandbox.create",
+            new=AsyncMock(return_value=mock_sandbox),
+        ):
             result = await execute_source("python", "print('test')")
 
-            assert result["error"] == "Execution service unavailable"
+            assert result["error"] == "Traceback..."
+
+    @pytest.mark.asyncio
+    async def test_execute_missing_api_key(self):
+        """Test handling of missing E2B API key."""
+        with patch("app.services.code_execution.settings.e2b_api_key", ""):
+            result = await execute_source("python", "print('test')")
+
+            assert "E2B_API_KEY is not set" in result["error"]
 
     @pytest.mark.asyncio
     async def test_execute_general_exception(self):
         """Test handling of general exceptions."""
-        with patch("httpx.AsyncClient") as mock_client:
-            mock_instance = AsyncMock()
-            mock_instance.post.side_effect = Exception("Unexpected error")
-            mock_instance.__aenter__.return_value = mock_instance
-            mock_instance.__aexit__.return_value = None
-            mock_client.return_value = mock_instance
+        mock_sandbox = AsyncMock()
+        mock_sandbox.run_code.side_effect = Exception("Unexpected error")
 
+        with patch("app.services.code_execution.settings.e2b_api_key", "test-key"), patch(
+            "app.services.code_execution.AsyncSandbox.create",
+            new=AsyncMock(return_value=mock_sandbox),
+        ):
             result = await execute_source("python", "print('test')")
 
-            assert "Unexpected error" in result["error"]
+            assert "Execution failed: Unexpected error" == result["error"]
+            mock_sandbox.kill.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_execute_language_mapping(self):
-        """Test that language mapping works correctly."""
-        mock_response = MagicMock()
-        mock_response.json.return_value = {"run": {"stdout": "test", "stderr": "", "code": 0}}
-        mock_response.raise_for_status = MagicMock()
+    async def test_execute_passes_requested_language(self):
+        """Test that the selected language is passed to E2B."""
+        mock_execution = SimpleNamespace(
+            logs=SimpleNamespace(stdout=["hello\n"], stderr=[]),
+            error=None,
+            text=None,
+        )
+        mock_sandbox = AsyncMock()
+        mock_sandbox.run_code.return_value = mock_execution
 
-        with patch("httpx.AsyncClient") as mock_client:
-            mock_instance = AsyncMock()
-            mock_instance.post.return_value = mock_response
-            mock_instance.__aenter__.return_value = mock_instance
-            mock_instance.__aexit__.return_value = None
-            mock_client.return_value = mock_instance
+        with patch("app.services.code_execution.settings.e2b_api_key", "test-key"), patch(
+            "app.services.code_execution.AsyncSandbox.create",
+            new=AsyncMock(return_value=mock_sandbox),
+        ):
+            await execute_source("javascript", "console.log('hello')")
 
-            # cpp should be mapped to c++
-            await execute_source("cpp", "int main() {}")
-
-            # Check that the correct language was sent
-            call_args = mock_instance.post.call_args
-            payload = call_args.kwargs.get("json") or call_args[1].get("json")
-            assert payload["language"] == "c++"
+            assert mock_sandbox.run_code.await_args.kwargs["language"] == "javascript"

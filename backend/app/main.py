@@ -16,7 +16,7 @@ except ImportError:
 from app.config import settings
 from app.routes import sessions, websocket, execution, assistant
 from app.database import engine, Base
-from app.services.piston import ensure_languages_installed
+from app.services.code_execution import ensure_execution_service_ready
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -103,10 +103,7 @@ async def startup():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    # Initialize Piston languages in background
-    # We do this without awaiting to not block startup, or await if critical.
-    # Logic in ensure_languages_installed handles errors gracefully.
-    await ensure_languages_installed()
+    await ensure_execution_service_ready()
 
 
 @app.get(

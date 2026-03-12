@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from app.services.piston import execute_source, SUPPORTED_LANGUAGES
+from app.services.code_execution import SUPPORTED_LANGUAGES, execute_source
 
 router = APIRouter()
 

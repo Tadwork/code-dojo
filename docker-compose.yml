@@ -23,6 +23,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: coddojo-backend
+    env_file:
+      - ./backend/.env
     ports:
       - "8000:8000"
     environment:
@@ -45,7 +47,6 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - REACT_APP_API_URL=http://localhost:8000
       - CHOKIDAR_USEPOLLING=true
     volumes:
       - ./frontend:/app

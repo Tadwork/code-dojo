@@ -41,17 +41,18 @@ CodeDojo/
    ```
 
 2. **Configure environment variables**:
-   Create a `.env` file in the `backend/` directory:
+   Create a `.env` file in the `backend/` directory from `backend/.env.example`:
    ```bash
    DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/coddojo
    ENVIRONMENT=development
    SECRET_KEY=your-secret-key-here
+    E2B_API_KEY=your-e2b-api-key-here
    ```
 
 3. **Install dependencies and run**:
    ```bash
    cd backend
-   uv sync
+   uv sync --extra dev
    uv run uvicorn app.main:app --reload
    ```
 
@@ -85,7 +86,7 @@ npm test -- --coverage --watchAll=false
 
 ### Docker Development Setup
 
-For local development with Docker Compose (includes PostgreSQL):
+For local development with Docker Compose (includes PostgreSQL). Create `backend/.env` first so the backend receives `E2B_API_KEY`:
 
 ```bash
 # Start all services (PostgreSQL, backend, frontend)
@@ -134,7 +135,7 @@ docker run -p 8000:8000 --env-file backend/.env coddojo:latest
 
 4. **Execute Code**:
    - Click "Run Code" in the output panel
-   - Code is securely executed on the server (Node.js for JavaScript, Python environment for Python)
+   - Code is executed in an isolated E2B sandbox
 
 ## API Endpoints
 
@@ -158,11 +159,15 @@ The application uses PostgreSQL with the following main table:
 
 ## Deployment
 
-CodeDojo is configured for easy deployment on [Render](https://render.com) using Infrastructure as Code (IaC).
+CodeDojo is configured for deployment on [Render](https://render.com) using Infrastructure as Code (IaC), with PostgreSQL provided externally by Supabase.
 
 1.  Go to the Render Dashboard and select **New > Blueprint**.
 2.  Connect your repository.
-3.  Render will automatically detect the `render.yaml` file and configure the service and database.
+3.  Render will detect [render.yaml](/Users/tzvifriedman/dev/code-dojo/render.yaml) and create the `codedojo` web service.
+4.  In the Render dashboard, set these service environment variables before deploying:
+    - `DATABASE_URL`: your Supabase connection string
+    - `E2B_API_KEY`: your E2B API key
+5.  Do not commit production secrets to the repository. The blueprint intentionally leaves those values unsynced because the source is public.
 
 ## Development Guidelines
 
@@ -172,7 +177,7 @@ For AI-assisted development and best practices, see [Agents.md](./Agents.md).
 
 CodeDojo is built with the help of these amazing open-source projects and services:
 
-- **[Piston](https://github.com/engineer-man/piston)** - A high-performance code execution engine that powers our server-side code execution, supporting 50+ programming languages. We use the free public API at [emkc.org](https://emkc.org).
+- **[E2B](https://e2b.dev/)** - Secure cloud sandboxes used for server-side code execution in CodeDojo. The backend currently enables Python, JavaScript, and TypeScript execution through the E2B Python SDK.
 
 - **[Pollinations AI](https://pollinations.ai)** - A free, open-source generative AI platform that powers our AI code generation assistant. No API key required.
 

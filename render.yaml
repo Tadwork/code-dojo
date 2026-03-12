@@ -18,20 +18,10 @@ services:
       - key: ENVIRONMENT
         value: production
       - key: DATABASE_URL
-        fromDatabase:
-          name: codedojo-db
-          property: connectionString
-      # Using public Piston API (https://emkc.org/api/v2/piston)
-      # - key: CORS_ORIGINS
-      #   value: ["https://codedojo-se9d.onrender.com"]
-
-# Render Postgres databases
-databases:
-  - name: codedojo-db
-    plan: free # Free tier for development
-    databaseName: coddojo # Database name within PostgreSQL instance
-    region: virginia
-    postgresMajorVersion: '16' # Use recent stable version
-    ipAllowList: # Allow connections from anywhere (can restrict later)
-      - source: 0.0.0.0/0
-        description: allow all connections
+        sync: false
+      - key: E2B_API_KEY
+        sync: false
+      - key: EXECUTION_TIMEOUT_SECONDS
+        value: 10
+      - key: EXECUTION_REQUEST_TIMEOUT_SECONDS
+        value: 15
