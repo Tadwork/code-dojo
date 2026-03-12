@@ -1,17 +1,17 @@
-import axios from 'axios';
+import axios from "axios";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
 const api = axios.create({
   // Default to same-origin requests so the SPA works on Render without extra env config
-  baseURL: API_URL || '/',
+  baseURL: API_URL || "/",
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
-export const createSession = async (title, language = 'python') => {
-  const response = await api.post('/api/sessions', {
+export const createSession = async (title, language = "python") => {
+  const response = await api.post("/api/sessions", {
     title,
     language,
   });
@@ -24,22 +24,15 @@ export const getSession = async (sessionCode) => {
 };
 
 export const executeCode = async (code, language) => {
-  console.log('executeCode called with:', { code, language });
-  try {
-    const response = await api.post('/api/execute', {
-      code,
-      language,
-    });
-    console.log('executeCode response:', response);
-    return response.data;
-  } catch (error) {
-    console.error('executeCode error:', error);
-    throw error;
-  }
+  const response = await api.post("/api/execute", {
+    code,
+    language,
+  });
+  return response.data;
 };
 
 export const generateCode = async (prompt, code, language) => {
-  const response = await api.post('/api/assistant/generate', {
+  const response = await api.post("/api/assistant/generate", {
     prompt,
     code,
     language,

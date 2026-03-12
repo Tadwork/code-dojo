@@ -33,3 +33,4 @@ EXPOSE 8000
 # Default command (can be overridden in docker-compose)
 CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
+
