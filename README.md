@@ -66,7 +66,13 @@ npm install
 npm start
 ```
 
-The frontend will start on `http://localhost:3000` and connect to the backend at `http://localhost:8000`.
+The frontend will start on `http://localhost:3000` and proxy API/WebSocket traffic to `http://localhost:8000` by default.
+
+If your backend runs somewhere else, set the proxy target before starting the frontend:
+
+```bash
+REACT_APP_PROXY_TARGET=http://localhost:8000 npm start
+```
 
 ### Running Tests
 
@@ -106,6 +112,8 @@ The services will be available at:
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8000
 - PostgreSQL: localhost:5432
+
+For Docker Compose, set `REACT_APP_PROXY_TARGET=http://backend:8000` for the frontend service so the dev server proxies through the Docker network.
 
 ### Docker Production Build
 
