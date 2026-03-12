@@ -46,3 +46,4 @@ class TestSessionModel:
 
         assert session.created_at is not None
         assert isinstance(session.created_at, datetime)
+

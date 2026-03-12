@@ -229,3 +229,4 @@ def test_welcome_message_excludes_self(client, monkeypatch):
             assert join_notice["userId"] == "user-2"
 
     reset_manager_state()
+

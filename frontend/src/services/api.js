@@ -48,3 +48,4 @@ export const generateCode = async (prompt, code, language) => {
 };
 
 export default api;
+

@@ -37,3 +37,4 @@ class TestMainApp:
         routes = [route.path for route in app.routes]
         assert "/api/sessions" in str(routes)
         assert "/ws/{session_code}" in str(routes)
+

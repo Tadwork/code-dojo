@@ -34,3 +34,4 @@ class TestAPIIntegration:
 
         assert response.status_code == 200
         assert "SPA" in response.text
+

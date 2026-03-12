@@ -80,3 +80,4 @@ class SessionService:
             await db.commit()
             await db.refresh(session)
         return session
+

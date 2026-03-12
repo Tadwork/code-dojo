@@ -326,7 +326,25 @@ async def websocket_endpoint(
             exclude=websocket,
         )
 
-        while True:
+me payload excludes self
+     pants:
+            manager.participants[session_code] = {}
+
+        color = manager._get_next_color(session_code)
+        participant = Participantts[session_code][user_id] = participant
+        manager.websocket_to_user[websocket] = (session_code, user_id)
+
+        # Get current session state
+        async with AsyncSessionLocal() as db:
+            session = await SessionService.get_session_by_code(db, session_code)
+
+        # Send welcome message with participant info
+        await websocket.send_json(
+            {
+                "type": "welcome",
+                "userId": user_id,
+                "displayName": display_name,
+                   while True:
             try:
                 data = await websocket.receive_text()
             except Exception as e:
