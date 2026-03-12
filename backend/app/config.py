@@ -62,4 +62,5 @@ class Settings(BaseSettings):
             origins.append(render_url)
         return origins
 
+
 settings = Settings()
