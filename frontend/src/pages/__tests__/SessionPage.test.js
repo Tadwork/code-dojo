@@ -5,6 +5,11 @@ import SessionPage from '../SessionPage';
 import * as api from '../../services/api';
 import useWebSocket from '../../hooks/useWebSocket';
 
+const ROUTER_FUTURE_FLAGS = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+};
+
 jest.mock('../../services/api');
 jest.mock('../../hooks/useWebSocket');
 jest.mock('../../utils/participantUtils', () => ({
@@ -50,7 +55,7 @@ const mockSession = {
 
 const renderWithRouter = (component, initialEntries = ['/session/TEST1234']) => {
   return render(
-    <MemoryRouter initialEntries={initialEntries}>
+    <MemoryRouter initialEntries={initialEntries} future={ROUTER_FUTURE_FLAGS}>
       <Routes>
         <Route path="/session/:sessionCode" element={component} />
       </Routes>
@@ -379,6 +384,5 @@ describe('SessionPage', () => {
     });
   });
 });
-
 
 

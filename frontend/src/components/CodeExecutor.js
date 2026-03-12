@@ -28,9 +28,7 @@ const CodeExecutor = ({ code, language }) => {
     setError('');
 
     try {
-      console.log('Calling executeCode service...');
       const data = await executeCodeFromAPI(code, language);
-      console.log('Received data from service:', data);
 
       if (!data) {
         throw new Error('No data received from server');
@@ -40,7 +38,6 @@ const CodeExecutor = ({ code, language }) => {
         setError(data.error);
       }
       setOutput(data.output);
-
     } catch (err) {
       setError(err.response?.data?.detail || err.message || 'Execution error');
     } finally {
@@ -75,5 +72,4 @@ const CodeExecutor = ({ code, language }) => {
 };
 
 export default CodeExecutor;
-
 

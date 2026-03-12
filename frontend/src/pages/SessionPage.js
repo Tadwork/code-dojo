@@ -4,6 +4,7 @@ import Editor from '@monaco-editor/react';
 import { getSession, generateCode } from '../services/api';
 import useWebSocket from '../hooks/useWebSocket';
 import CodeExecutor from '../components/CodeExecutor';
+import { LANGUAGE_OPTIONS } from '../constants/languages';
 import { hexToRgba } from '../utils/participantUtils';
 import './SessionPage.css';
 
@@ -309,48 +310,6 @@ const SessionPage = () => {
     return languageMap[lang] || 'plaintext';
   };
 
-  // Language options organized by category
-  const languageOptions = [
-    { value: 'python', label: 'Python' },
-    { value: 'javascript', label: 'JavaScript' },
-    { value: 'typescript', label: 'TypeScript' },
-    { value: 'java', label: 'Java' },
-    { value: 'c', label: 'C' },
-    { value: 'cpp', label: 'C++' },
-    { value: 'csharp', label: 'C#' },
-    { value: 'go', label: 'Go' },
-    { value: 'rust', label: 'Rust' },
-    { value: 'ruby', label: 'Ruby' },
-    { value: 'php', label: 'PHP' },
-    { value: 'swift', label: 'Swift' },
-    { value: 'kotlin', label: 'Kotlin' },
-    { value: 'scala', label: 'Scala' },
-    { value: 'bash', label: 'Bash' },
-    { value: 'perl', label: 'Perl' },
-    { value: 'lua', label: 'Lua' },
-    { value: 'r', label: 'R' },
-    { value: 'dart', label: 'Dart' },
-    { value: 'elixir', label: 'Elixir' },
-    { value: 'clojure', label: 'Clojure' },
-    { value: 'haskell', label: 'Haskell' },
-    { value: 'julia', label: 'Julia' },
-    { value: 'pascal', label: 'Pascal' },
-    { value: 'fsharp', label: 'F#' },
-    { value: 'nim', label: 'Nim' },
-    { value: 'crystal', label: 'Crystal' },
-    { value: 'sql', label: 'SQL' },
-    { value: 'powershell', label: 'PowerShell' },
-    { value: 'erlang', label: 'Erlang' },
-    { value: 'fortran', label: 'Fortran' },
-    { value: 'cobol', label: 'COBOL' },
-    { value: 'prolog', label: 'Prolog' },
-    { value: 'lisp', label: 'Lisp' },
-    { value: 'ocaml', label: 'OCaml' },
-    { value: 'groovy', label: 'Groovy' },
-    { value: 'd', label: 'D' },
-    { value: 'zig', label: 'Zig' },
-  ];
-
   // Get remote participants (excluding self)
   const remoteParticipants = Object.values(participants).filter(
     (p) => myInfo && p.userId !== myInfo.userId
@@ -422,7 +381,7 @@ const SessionPage = () => {
             onChange={(e) => handleLanguageChange(e.target.value)}
             className="language-select"
           >
-            {languageOptions.map((lang) => (
+            {LANGUAGE_OPTIONS.map((lang) => (
               <option key={lang.value} value={lang.value}>
                 {lang.label}
               </option>
@@ -491,6 +450,5 @@ const SessionPage = () => {
 };
 
 export default SessionPage;
-
 
 

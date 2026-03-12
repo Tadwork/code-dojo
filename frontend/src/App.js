@@ -4,6 +4,11 @@ import HomePage from './pages/HomePage';
 import SessionPage from './pages/SessionPage';
 import './App.css';
 
+const ROUTER_FUTURE_FLAGS = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+};
+
 export function AppRoutes() {
   return (
     <div className="App">
@@ -17,12 +22,11 @@ export function AppRoutes() {
 
 function App() {
   return (
-    <Router>
+    <Router future={ROUTER_FUTURE_FLAGS}>
       <AppRoutes />
     </Router>
   );
 }
 
 export default App;
-
 

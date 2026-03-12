@@ -4,6 +4,11 @@ import { BrowserRouter } from 'react-router-dom';
 import HomePage from '../HomePage';
 import * as api from '../../services/api';
 
+const ROUTER_FUTURE_FLAGS = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+};
+
 jest.mock('../../services/api');
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
@@ -11,7 +16,9 @@ jest.mock('react-router-dom', () => ({
 }));
 
 const renderWithRouter = (component) => {
-  return render(<BrowserRouter>{component}</BrowserRouter>);
+  return render(
+    <BrowserRouter future={ROUTER_FUTURE_FLAGS}>{component}</BrowserRouter>
+  );
 };
 
 describe('HomePage', () => {
@@ -124,5 +131,4 @@ describe('HomePage', () => {
     ).toBeInTheDocument();
   });
 });
-
 

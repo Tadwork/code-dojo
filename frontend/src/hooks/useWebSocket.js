@@ -44,6 +44,16 @@ const useWebSocket = (sessionCode, onMessage) => {
   const reconnectTimeoutRef = useRef(null);
   const messageHandlerRef = useRef(onMessage);
 
+  const updateParticipant = useCallback((userId, updater) => {
+    setParticipants((prev) => {
+      const currentParticipant = prev[userId] || { userId };
+      return {
+        ...prev,
+        [userId]: updater(currentParticipant),
+      };
+    });
+  }, []);
+
   // Keep latest onMessage without re-running the WS effect
   useEffect(() => {
     messageHandlerRef.current = onMessage;
@@ -51,47 +61,29 @@ const useWebSocket = (sessionCode, onMessage) => {
 
   // Handle incoming WebSocket messages
   const handleMessage = useCallback((message) => {
-    console.log('[WS] Received message:', message.type, message);
-
     switch (message.type) {
       case 'welcome':
-        // We've successfully joined
-        console.log('[WS] Welcome - myInfo:', message.userId, message.displayName, message.color);
-        console.log('[WS] Welcome - participants:', message.participants);
         setMyInfo({
           userId: message.userId,
           displayName: message.displayName,
           color: message.color,
         });
-        // Initialize participants map from list
-        const participantsMap = {};
-        if (message.participants) {
-          message.participants.forEach((p) => {
-            participantsMap[p.userId] = p;
-          });
-        }
+        const participantsMap = (message.participants || []).reduce((acc, participant) => {
+          acc[participant.userId] = participant;
+          return acc;
+        }, {});
         setParticipants(participantsMap);
-        console.log('[WS] Set participants to:', participantsMap);
         break;
 
       case 'participant_join':
-        console.log('[WS] Participant joined:', message.userId, message.displayName);
-        setParticipants((prev) => {
-          const updated = {
-            ...prev,
-            [message.userId]: {
-              userId: message.userId,
-              displayName: message.displayName,
-              color: message.color,
-            },
-          };
-          console.log('[WS] Updated participants:', updated);
-          return updated;
-        });
+        updateParticipant(message.userId, () => ({
+          userId: message.userId,
+          displayName: message.displayName,
+          color: message.color,
+        }));
         break;
 
       case 'participant_leave':
-        console.log('[WS] Participant left:', message.userId);
         setParticipants((prev) => {
           const updated = { ...prev };
           delete updated[message.userId];
@@ -100,24 +92,16 @@ const useWebSocket = (sessionCode, onMessage) => {
         break;
 
       case 'cursor_update':
-        console.log('[WS] Cursor update:', message.userId, message.position);
-        setParticipants((prev) => ({
-          ...prev,
-          [message.userId]: {
-            ...prev[message.userId],
-            cursor: message.position,
-          },
+        updateParticipant(message.userId, (participant) => ({
+          ...participant,
+          cursor: message.position,
         }));
         break;
 
       case 'selection_update':
-        console.log('[WS] Selection update:', message.userId, message.selection);
-        setParticipants((prev) => ({
-          ...prev,
-          [message.userId]: {
-            ...prev[message.userId],
-            selection: message.selection,
-          },
+        updateParticipant(message.userId, (participant) => ({
+          ...participant,
+          selection: message.selection,
         }));
         break;
 
@@ -130,7 +114,7 @@ const useWebSocket = (sessionCode, onMessage) => {
     if (messageHandlerRef.current) {
       messageHandlerRef.current(message);
     }
-  }, []);
+  }, [updateParticipant]);
 
   useEffect(() => {
     const wsUrl = `${resolveWsBase()}/ws/${sessionCode}`;
@@ -161,14 +145,12 @@ const useWebSocket = (sessionCode, onMessage) => {
           try {
             const message = JSON.parse(event.data);
             handleMessage(message);
-          } catch (error) {
-            console.error('Error parsing WebSocket message:', error);
+          } catch (_error) {
+            // Ignore malformed payloads from the socket.
           }
         };
 
-        ws.onerror = (error) => {
-          console.error('WebSocket error:', error);
-        };
+        ws.onerror = () => {};
 
         ws.onclose = () => {
           setIsConnected(false);
@@ -180,8 +162,7 @@ const useWebSocket = (sessionCode, onMessage) => {
             }, 3000);
           }
         };
-      } catch (error) {
-        console.error('WebSocket connection error:', error);
+      } catch (_error) {
         setIsConnected(false);
       }
     };
@@ -237,6 +218,5 @@ const useWebSocket = (sessionCode, onMessage) => {
 };
 
 export default useWebSocket;
-
 
 

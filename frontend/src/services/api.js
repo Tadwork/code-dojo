@@ -24,18 +24,11 @@ export const getSession = async (sessionCode) => {
 };
 
 export const executeCode = async (code, language) => {
-  console.log('executeCode called with:', { code, language });
-  try {
-    const response = await api.post('/api/execute', {
-      code,
-      language,
-    });
-    console.log('executeCode response:', response);
-    return response.data;
-  } catch (error) {
-    console.error('executeCode error:', error);
-    throw error;
-  }
+  const response = await api.post('/api/execute', {
+    code,
+    language,
+  });
+  return response.data;
 };
 
 export const generateCode = async (prompt, code, language) => {
@@ -48,4 +41,3 @@ export const generateCode = async (prompt, code, language) => {
 };
 
 export default api;
-

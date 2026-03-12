@@ -389,18 +389,17 @@ describe('useWebSocket', () => {
 
   it('should handle WebSocket errors gracefully', async () => {
     const onMessage = jest.fn();
-    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-
-    renderHook(() => useWebSocket('TEST1234', onMessage));
+    const { result } = renderHook(() => useWebSocket('TEST1234', onMessage));
 
     await waitFor(() => {
       expect(mockWebSocketInstances.length).toBeGreaterThan(0);
     });
 
+    act(() => mockWebSocketInstances[0].simulateOpen());
     act(() => mockWebSocketInstances[0].simulateError());
 
-    expect(consoleErrorSpy).toHaveBeenCalled();
-    consoleErrorSpy.mockRestore();
+    expect(result.current.isConnected).toBe(true);
+    expect(onMessage).not.toHaveBeenCalled();
   });
 
   it('should cleanup WebSocket on unmount', async () => {
