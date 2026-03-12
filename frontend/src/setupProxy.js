@@ -1,14 +1,14 @@
 /* eslint-env node */
 
-const { createProxyMiddleware } = require('http-proxy-middleware');
+const { createProxyMiddleware } = require("http-proxy-middleware");
 
 module.exports = function setupProxy(app) {
   app.use(
-    ['/api', '/ws'],
+    ["/api", "/ws"],
     createProxyMiddleware({
-      target: 'http://backend:8000',
+      target: "http://backend:8000",
       changeOrigin: true,
       ws: true,
-    })
+    }),
   );
 };

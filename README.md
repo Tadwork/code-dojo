@@ -46,7 +46,7 @@ CodeDojo/
    DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/coddojo
    ENVIRONMENT=development
    SECRET_KEY=your-secret-key-here
-    E2B_API_KEY=your-e2b-api-key-here
+   E2B_API_KEY=your-e2b-api-key-here
    ```
 
 3. **Install dependencies and run**:
@@ -163,7 +163,7 @@ CodeDojo is configured for deployment on [Render](https://render.com) using Infr
 
 1.  Go to the Render Dashboard and select **New > Blueprint**.
 2.  Connect your repository.
-3.  Render will detect [render.yaml](/Users/tzvifriedman/dev/code-dojo/render.yaml) and create the `codedojo` web service.
+3.  Render will detect [render.yaml](./render.yaml) and create the `codedojo` web service.
 4.  In the Render dashboard, set these service environment variables before deploying:
     - `DATABASE_URL`: your Supabase connection string
     - `E2B_API_KEY`: your E2B API key

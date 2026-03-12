@@ -90,20 +90,31 @@ class ConnectionManager:
             self.participants[session_code] = {}
 
     async def connect(
-        self, websocket: WebSocket, session_code: str, user_id: str, display_name: str
+        self,
+        websocket: WebSocket,
+        session_code: str,
+        user_id: str,
+        display_name: str,
+        *,
+        accept_connection: bool = True,
     ) -> Participant:
         """Accept a WebSocket connection and register participant."""
-        await websocket.accept()
-        return self.register(websocket, session_code, user_id, display_name)
+        if accept_connection:
+            await websocket.accept()
 
-    def register(
-        self, websocket: WebSocket, session_code: str, user_id: str, display_name: str
-    ) -> Participant:
-        """Register a participant on an already accepted WebSocket."""
         self._ensure_session_state(session_code)
+
+        previous_connection = self.participants.get(session_code, {}).get(user_id)
+        if previous_connection:
+            self.active_connections[session_code].discard(previous_connection.websocket)
+            self.websocket_to_user.pop(previous_connection.websocket, None)
+
         self.active_connections[session_code].add(websocket)
 
         color = self._get_next_color(session_code)
+        if previous_connection:
+            color = previous_connection.color
+
         participant = Participant(
             user_id=user_id,
             display_name=display_name,
@@ -244,7 +255,13 @@ async def register_participant(
 ) -> tuple[Participant, list[Dict[str, Any]]]:
     """Register a participant and return their info plus existing peers."""
     existing_participants = manager.get_all_participants(session_code)
-    participant = manager.register(websocket, session_code, user_id, display_name)
+    participant = await manager.connect(
+        websocket,
+        session_code,
+        user_id,
+        display_name,
+        accept_connection=False,
+    )
     return participant, existing_participants
 
 

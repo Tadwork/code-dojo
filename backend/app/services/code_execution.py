@@ -78,4 +78,7 @@ async def execute_source(language: str, code: str) -> dict[str, str]:
         return {"output": "", "error": f"Execution failed: {exc}"}
     finally:
         if sandbox is not None:
-            await sandbox.kill(request_timeout=settings.execution_request_timeout_seconds)
+            try:
+                await sandbox.kill(request_timeout=settings.execution_request_timeout_seconds)
+            except Exception:
+                logger.error("Failed to kill E2B sandbox during cleanup", exc_info=True)

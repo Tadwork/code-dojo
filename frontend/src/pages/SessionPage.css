@@ -98,7 +98,9 @@
   font-size: 12px;
   font-weight: bold;
   cursor: default;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
   border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -238,7 +240,6 @@
 }
 
 @keyframes sparkle {
-
   0%,
   100% {
     opacity: 1;
@@ -259,7 +260,9 @@
   border-radius: 8px;
   color: #d4d4d4;
   font-size: 0.95rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .ai-prompt-input:focus {
@@ -311,5 +314,3 @@
   color: #ff6b6b;
   font-size: 0.85rem;
 }
-
-

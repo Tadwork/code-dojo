@@ -1,31 +1,32 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import Editor from '@monaco-editor/react';
-import { getSession, generateCode } from '../services/api';
-import useWebSocket from '../hooks/useWebSocket';
-import CodeExecutor from '../components/CodeExecutor';
-import { LANGUAGE_OPTIONS } from '../constants/languages';
-import { hexToRgba } from '../utils/participantUtils';
-import './SessionPage.css';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import Editor from "@monaco-editor/react";
+import { getSession, generateCode } from "../services/api";
+import useWebSocket from "../hooks/useWebSocket";
+import CodeExecutor from "../components/CodeExecutor";
+import { LANGUAGE_OPTIONS } from "../constants/languages";
+import { hexToRgba, sanitizeForCssContent } from "../utils/participantUtils";
+import "./SessionPage.css";
 
 const SessionPage = () => {
   const { sessionCode } = useParams();
   const navigate = useNavigate();
   const [session, setSession] = useState(null);
-  const [code, setCode] = useState('');
-  const [language, setLanguage] = useState('python');
+  const [code, setCode] = useState("");
+  const [language, setLanguage] = useState("python");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [shareLink, setShareLink] = useState('');
+  const [shareLink, setShareLink] = useState("");
   const editorRef = useRef(null);
   const monacoRef = useRef(null);
   const isLocalChange = useRef(false);
   const decorationsRef = useRef([]);
+  const editorDisposablesRef = useRef([]);
 
   // AI Assistant state
-  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiPrompt, setAiPrompt] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError] = useState('');
+  const [aiError, setAiError] = useState("");
 
   // Initialize share link
   useEffect(() => {
@@ -39,11 +40,11 @@ const SessionPage = () => {
       try {
         const sessionData = await getSession(sessionCode);
         setSession(sessionData);
-        setCode(sessionData.code || '');
-        setLanguage(sessionData.language || 'python');
+        setCode(sessionData.code || "");
+        setLanguage(sessionData.language || "python");
         setLoading(false);
       } catch (err) {
-        setError('Session not found');
+        setError("Session not found");
         setLoading(false);
       }
     };
@@ -53,14 +54,14 @@ const SessionPage = () => {
 
   // WebSocket message handler
   const handleWebSocketMessage = useCallback((message) => {
-    if (message.type === 'code_update' || message.type === 'welcome') {
+    if (message.type === "code_update" || message.type === "welcome") {
       if (!isLocalChange.current && message.code !== undefined) {
         setCode(message.code);
         if (message.language) {
           setLanguage(message.language);
         }
       }
-    } else if (message.type === 'language_update') {
+    } else if (message.type === "language_update") {
       setLanguage(message.language);
     }
   }, []);
@@ -84,7 +85,7 @@ const SessionPage = () => {
 
     // Filter out our own cursor
     const remoteParticipants = Object.values(participants).filter(
-      (p) => myInfo && p.userId !== myInfo.userId
+      (p) => myInfo && p.userId !== myInfo.userId,
     );
 
     remoteParticipants.forEach((participant) => {
@@ -96,9 +97,11 @@ const SessionPage = () => {
           newDecorations.push({
             range: new monaco.Range(lineNumber, column, lineNumber, column + 1),
             options: {
-              className: `remote-cursor-${participant.userId.replace(/-/g, '')}`,
+              className: `remote-cursor-${participant.userId.replace(/-/g, "")}`,
               beforeContentClassName: `remote-cursor-marker`,
-              stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
+              stickiness:
+                monaco.editor.TrackedRangeStickiness
+                  .NeverGrowsWhenTypingAtEdges,
             },
           });
         }
@@ -120,11 +123,13 @@ const SessionPage = () => {
               startLineNumber,
               startColumn,
               endLineNumber,
-              endColumn
+              endColumn,
             ),
             options: {
-              className: `remote-selection-${participant.userId.replace(/-/g, '')}`,
-              stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
+              className: `remote-selection-${participant.userId.replace(/-/g, "")}`,
+              stickiness:
+                monaco.editor.TrackedRangeStickiness
+                  .NeverGrowsWhenTypingAtEdges,
             },
           });
         }
@@ -134,20 +139,20 @@ const SessionPage = () => {
     // Apply decorations
     decorationsRef.current = editor.deltaDecorations(
       decorationsRef.current,
-      newDecorations
+      newDecorations,
     );
 
     // Inject dynamic CSS for participant colors
-    let styleEl = document.getElementById('participant-cursor-styles');
+    let styleEl = document.getElementById("participant-cursor-styles");
     if (!styleEl) {
-      styleEl = document.createElement('style');
-      styleEl.id = 'participant-cursor-styles';
+      styleEl = document.createElement("style");
+      styleEl.id = "participant-cursor-styles";
       document.head.appendChild(styleEl);
     }
 
     const cssRules = remoteParticipants
       .map((p) => {
-        const safeId = p.userId.replace(/-/g, '');
+        const safeId = p.userId.replace(/-/g, "");
         return `
           .remote-selection-${safeId} {
             background-color: ${hexToRgba(p.color, 0.3)} !important;
@@ -161,7 +166,7 @@ const SessionPage = () => {
             margin-left: -1px;
           }
           .remote-cursor-${safeId}::after {
-            content: '${p.displayName}';
+            content: '${sanitizeForCssContent(p.displayName)}';
             position: absolute;
             top: -18px;
             left: 0;
@@ -175,7 +180,7 @@ const SessionPage = () => {
           }
         `;
       })
-      .join('\n');
+      .join("\n");
 
     styleEl.textContent = cssRules;
   }, [participants, myInfo]);
@@ -183,14 +188,14 @@ const SessionPage = () => {
   // Handle code changes
   const handleCodeChange = (value) => {
     isLocalChange.current = true;
-    setCode(value || '');
+    setCode(value || "");
 
     // Debounce WebSocket updates
     clearTimeout(handleCodeChange.timeout);
     handleCodeChange.timeout = setTimeout(() => {
       sendMessage({
-        type: 'code_change',
-        code: value || '',
+        type: "code_change",
+        code: value || "",
         language: language,
       });
       isLocalChange.current = false;
@@ -201,7 +206,7 @@ const SessionPage = () => {
   const handleLanguageChange = (newLanguage) => {
     setLanguage(newLanguage);
     sendMessage({
-      type: 'language_change',
+      type: "language_change",
       language: newLanguage,
     });
   };
@@ -209,7 +214,7 @@ const SessionPage = () => {
   // Copy share link
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareLink);
-    alert('Link copied to clipboard!');
+    alert("Link copied to clipboard!");
   };
 
   // AI Code Generation
@@ -217,7 +222,7 @@ const SessionPage = () => {
     if (!aiPrompt.trim()) return;
 
     setAiLoading(true);
-    setAiError('');
+    setAiError("");
 
     try {
       const result = await generateCode(aiPrompt, code, language);
@@ -227,14 +232,14 @@ const SessionPage = () => {
         // Update code and sync via WebSocket
         setCode(result.code);
         sendMessage({
-          type: 'code_change',
+          type: "code_change",
           code: result.code,
           language: language,
         });
-        setAiPrompt(''); // Clear prompt on success
+        setAiPrompt(""); // Clear prompt on success
       }
     } catch (err) {
-      setAiError(err.response?.data?.detail || 'Failed to generate code');
+      setAiError(err.response?.data?.detail || "Failed to generate code");
     } finally {
       setAiLoading(false);
     }
@@ -242,11 +247,15 @@ const SessionPage = () => {
 
   // Handle editor mount
   const handleEditorMount = (editor, monaco) => {
+    editorDisposablesRef.current.forEach((disposable) => {
+      disposable?.dispose?.();
+    });
+    editorDisposablesRef.current = [];
     editorRef.current = editor;
     monacoRef.current = monaco;
 
     // Track cursor position changes
-    editor.onDidChangeCursorPosition((e) => {
+    const cursorDisposable = editor.onDidChangeCursorPosition((e) => {
       sendCursorPosition({
         lineNumber: e.position.lineNumber,
         column: e.position.column,
@@ -254,7 +263,7 @@ const SessionPage = () => {
     });
 
     // Track selection changes
-    editor.onDidChangeCursorSelection((e) => {
+    const selectionDisposable = editor.onDidChangeCursorSelection((e) => {
       const sel = e.selection;
       sendSelection({
         startLineNumber: sel.startLineNumber,
@@ -263,56 +272,70 @@ const SessionPage = () => {
         endColumn: sel.endColumn,
       });
     });
+
+    editorDisposablesRef.current = [
+      cursorDisposable,
+      selectionDisposable,
+    ].filter(Boolean);
   };
+
+  useEffect(() => {
+    return () => {
+      editorDisposablesRef.current.forEach((disposable) => {
+        disposable?.dispose?.();
+      });
+      editorDisposablesRef.current = [];
+    };
+  }, []);
 
   const getMonacoLanguage = (lang) => {
     // Map our language identifiers to Monaco language IDs
     const languageMap = {
-      python: 'python',
-      javascript: 'javascript',
-      typescript: 'typescript',
-      java: 'java',
-      c: 'c',
-      cpp: 'cpp',
-      csharp: 'csharp',
-      go: 'go',
-      rust: 'rust',
-      ruby: 'ruby',
-      php: 'php',
-      swift: 'swift',
-      kotlin: 'kotlin',
-      scala: 'scala',
-      bash: 'shell',
-      perl: 'perl',
-      lua: 'lua',
-      r: 'r',
-      dart: 'dart',
-      elixir: 'elixir',
-      clojure: 'clojure',
-      haskell: 'haskell',
-      julia: 'julia',
-      pascal: 'pascal',
-      fsharp: 'fsharp',
-      nim: 'nim',
-      crystal: 'ruby', // Crystal syntax is similar to Ruby
-      sql: 'sql',
-      powershell: 'powershell',
-      erlang: 'erlang',
-      fortran: 'fortran',
-      cobol: 'cobol',
-      prolog: 'prolog',
-      lisp: 'scheme', // Use scheme for lisp-like syntax
-      ocaml: 'ocaml',
-      groovy: 'groovy',
-      d: 'd',
-      zig: 'zig',
+      python: "python",
+      javascript: "javascript",
+      typescript: "typescript",
+      java: "java",
+      c: "c",
+      cpp: "cpp",
+      csharp: "csharp",
+      go: "go",
+      rust: "rust",
+      ruby: "ruby",
+      php: "php",
+      swift: "swift",
+      kotlin: "kotlin",
+      scala: "scala",
+      bash: "shell",
+      perl: "perl",
+      lua: "lua",
+      r: "r",
+      dart: "dart",
+      elixir: "elixir",
+      clojure: "clojure",
+      haskell: "haskell",
+      julia: "julia",
+      pascal: "pascal",
+      fsharp: "fsharp",
+      nim: "nim",
+      crystal: "ruby", // Crystal syntax is similar to Ruby
+      sql: "sql",
+      powershell: "powershell",
+      erlang: "erlang",
+      fortran: "fortran",
+      cobol: "cobol",
+      prolog: "prolog",
+      lisp: "scheme", // Use scheme for lisp-like syntax
+      ocaml: "ocaml",
+      groovy: "groovy",
+      d: "d",
+      zig: "zig",
     };
-    return languageMap[lang] || 'plaintext';
+    return languageMap[lang] || "plaintext";
   };
 
   // Get remote participants (excluding self)
   const remoteParticipants = Object.values(participants).filter(
-    (p) => myInfo && p.userId !== myInfo.userId
+    (p) => myInfo && p.userId !== myInfo.userId,
   );
 
   if (loading) {
@@ -327,7 +350,7 @@ const SessionPage = () => {
     return (
       <div className="session-page">
         <div className="error">{error}</div>
-        <button onClick={() => navigate('/')} className="back-button">
+        <button onClick={() => navigate("/")} className="back-button">
           Go Home
         </button>
       </div>
@@ -342,12 +365,15 @@ const SessionPage = () => {
           <div className="session-code">Code: {sessionCode}</div>
         </div>
         <div className="session-controls">
-         
           {/* Participants Panel */}
           {remoteParticipants.length > 0 && (
             <div className="participants-panel">
               {remoteParticipants.map((p) => (
-                <div key={p.userId} className="participant-chip" title={p.displayName}>
+                <div
+                  key={p.userId}
+                  className="participant-chip"
+                  title={p.displayName}
+                >
                   <div
                     className="participant-avatar"
                     style={{ backgroundColor: p.color }}
@@ -361,9 +387,9 @@ const SessionPage = () => {
           )}
           <div className="connection-status">
             <span
-              className={`status-indicator ${isConnected ? 'connected' : 'disconnected'}`}
+              className={`status-indicator ${isConnected ? "connected" : "disconnected"}`}
             />
-            {isConnected ? 'Connected' : 'Disconnected'}
+            {isConnected ? "Connected" : "Disconnected"}
           </div>
           <div className="share-section">
             <input
@@ -387,10 +413,16 @@ const SessionPage = () => {
               </option>
             ))}
           </select>
-           {/* Current Participant Display */}
+          {/* Current Participant Display */}
           {myInfo && (
-            <div className="current-participant" title={`You: ${myInfo.displayName}`}>
-              <div className="my-avatar" style={{ backgroundColor: myInfo.color }}>
+            <div
+              className="current-participant"
+              title={`You: ${myInfo.displayName}`}
+            >
+              <div
+                className="my-avatar"
+                style={{ backgroundColor: myInfo.color }}
+              >
                 {myInfo.displayName.charAt(0).toUpperCase()}
               </div>
               <span className="my-name">{myInfo.displayName}</span>
@@ -407,7 +439,9 @@ const SessionPage = () => {
             type="text"
             value={aiPrompt}
             onChange={(e) => setAiPrompt(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && !aiLoading && handleGenerateCode()}
+            onKeyDown={(e) =>
+              e.key === "Enter" && !aiLoading && handleGenerateCode()
+            }
             placeholder="Ask AI to generate or modify code... (e.g., 'Add a function to sort an array')"
             className="ai-prompt-input"
             disabled={aiLoading}
@@ -417,7 +451,7 @@ const SessionPage = () => {
             disabled={aiLoading || !aiPrompt.trim()}
             className="ai-generate-button"
           >
-            {aiLoading ? 'Generating...' : 'Generate'}
+            {aiLoading ? "Generating..." : "Generate"}
           </button>
         </div>
         {aiError && <div className="ai-error">{aiError}</div>}
@@ -434,7 +468,7 @@ const SessionPage = () => {
             options={{
               minimap: { enabled: true },
               fontSize: 14,
-              wordWrap: 'on',
+              wordWrap: "on",
               automaticLayout: true,
             }}
             onMount={handleEditorMount}
@@ -450,5 +484,3 @@ const SessionPage = () => {
 };
 
 export default SessionPage;
-
-

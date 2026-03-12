@@ -1,21 +1,21 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import SessionPage from '../SessionPage';
-import * as api from '../../services/api';
-import useWebSocket from '../../hooks/useWebSocket';
+import React from "react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
+import SessionPage from "../SessionPage";
+import * as api from "../../services/api";
+import useWebSocket from "../../hooks/useWebSocket";
 
 const ROUTER_FUTURE_FLAGS = {
   v7_startTransition: true,
   v7_relativeSplatPath: true,
 };
 
-jest.mock('../../services/api');
-jest.mock('../../hooks/useWebSocket');
-jest.mock('../../utils/participantUtils', () => ({
+jest.mock("../../services/api");
+jest.mock("../../hooks/useWebSocket");
+jest.mock("../../utils/participantUtils", () => ({
   hexToRgba: (hex, alpha) => `rgba(0, 0, 0, ${alpha})`,
 }));
-jest.mock('@monaco-editor/react', () => ({
+jest.mock("@monaco-editor/react", () => ({
   __esModule: true,
   default: ({ value, onChange, onMount }) => {
     // Simulate editor mount
@@ -44,26 +44,29 @@ jest.mock('@monaco-editor/react', () => ({
 }));
 
 const mockSession = {
-  id: 'test-id',
-  session_code: 'TEST1234',
-  title: 'Test Session',
-  language: 'python',
+  id: "test-id",
+  session_code: "TEST1234",
+  title: "Test Session",
+  language: "python",
   code: 'print("hello")',
-  created_at: '2024-01-01T00:00:00',
+  created_at: "2024-01-01T00:00:00",
   active_users: 0,
 };
 
-const renderWithRouter = (component, initialEntries = ['/session/TEST1234']) => {
+const renderWithRouter = (
+  component,
+  initialEntries = ["/session/TEST1234"],
+) => {
   return render(
     <MemoryRouter initialEntries={initialEntries} future={ROUTER_FUTURE_FLAGS}>
       <Routes>
         <Route path="/session/:sessionCode" element={component} />
       </Routes>
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 };
 
-describe('SessionPage', () => {
+describe("SessionPage", () => {
   const mockSendMessage = jest.fn();
   const mockSendCursorPosition = jest.fn();
   const mockSendSelection = jest.fn();
@@ -76,7 +79,11 @@ describe('SessionPage', () => {
       sendCursorPosition: mockSendCursorPosition,
       sendSelection: mockSendSelection,
       participants: {},
-      myInfo: { userId: 'test-user', displayName: 'Test User', color: '#FF6B6B' },
+      myInfo: {
+        userId: "test-user",
+        displayName: "Test User",
+        color: "#FF6B6B",
+      },
     });
     global.navigator.clipboard = {
       writeText: jest.fn().mockResolvedValue(),
@@ -84,66 +91,66 @@ describe('SessionPage', () => {
     global.alert = jest.fn();
   });
 
-  it('should show loading state initially', () => {
+  it("should show loading state initially", () => {
     api.getSession.mockImplementation(
-      () => new Promise((resolve) => setTimeout(resolve, 100))
+      () => new Promise((resolve) => setTimeout(resolve, 100)),
     );
 
     renderWithRouter(<SessionPage />);
 
-    expect(screen.getByText('Loading session...')).toBeInTheDocument();
+    expect(screen.getByText("Loading session...")).toBeInTheDocument();
   });
 
-  it('should load and display session data', async () => {
+  it("should load and display session data", async () => {
     api.getSession.mockResolvedValue(mockSession);
 
     renderWithRouter(<SessionPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Test Session')).toBeInTheDocument();
+      expect(screen.getByText("Test Session")).toBeInTheDocument();
     });
     expect(screen.getByText(/Code: TEST1234/i)).toBeInTheDocument();
   });
 
-  it('should display error when session not found', async () => {
-    api.getSession.mockRejectedValue(new Error('Session not found'));
+  it("should display error when session not found", async () => {
+    api.getSession.mockRejectedValue(new Error("Session not found"));
 
     renderWithRouter(<SessionPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Session not found')).toBeInTheDocument();
+      expect(screen.getByText("Session not found")).toBeInTheDocument();
     });
   });
 
-  it('should display share link', async () => {
+  it("should display share link", async () => {
     api.getSession.mockResolvedValue(mockSession);
 
     renderWithRouter(<SessionPage />);
 
     await waitFor(() => {
       const shareInput = screen.getByDisplayValue(
-        /http:\/\/localhost(:3000)?\/session\/TEST1234/i
+        /http:\/\/localhost(:3000)?\/session\/TEST1234/i,
       );
       expect(shareInput).toBeInTheDocument();
     });
   });
 
-  it('should copy share link to clipboard', async () => {
+  it("should copy share link to clipboard", async () => {
     api.getSession.mockResolvedValue(mockSession);
 
     renderWithRouter(<SessionPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Copy Link')).toBeInTheDocument();
+      expect(screen.getByText("Copy Link")).toBeInTheDocument();
     });
-    const copyButton = screen.getByText('Copy Link');
+    const copyButton = screen.getByText("Copy Link");
     fireEvent.click(copyButton);
 
     expect(navigator.clipboard.writeText).toHaveBeenCalled();
-    expect(global.alert).toHaveBeenCalledWith('Link copied to clipboard!');
+    expect(global.alert).toHaveBeenCalledWith("Link copied to clipboard!");
   });
 
-  it('should display connection status', async () => {
+  it("should display connection status", async () => {
     api.getSession.mockResolvedValue(mockSession);
     useWebSocket.mockReturnValue({
       isConnected: true,
@@ -151,17 +158,21 @@ describe('SessionPage', () => {
       sendCursorPosition: mockSendCursorPosition,
       sendSelection: mockSendSelection,
       participants: {},
-      myInfo: { userId: 'test-user', displayName: 'Test User', color: '#FF6B6B' },
+      myInfo: {
+        userId: "test-user",
+        displayName: "Test User",
+        color: "#FF6B6B",
+      },
     });
 
     renderWithRouter(<SessionPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Connected')).toBeInTheDocument();
+      expect(screen.getByText("Connected")).toBeInTheDocument();
     });
   });
 
-  it('should show participant names in the participants panel', async () => {
+  it("should show participant names in the participants panel", async () => {
     api.getSession.mockResolvedValue(mockSession);
     useWebSocket.mockReturnValue({
       isConnected: true,
@@ -169,20 +180,28 @@ describe('SessionPage', () => {
       sendCursorPosition: mockSendCursorPosition,
       sendSelection: mockSendSelection,
       participants: {
-        'other-user': { userId: 'other-user', displayName: 'Other User', color: '#123456' },
+        "other-user": {
+          userId: "other-user",
+          displayName: "Other User",
+          color: "#123456",
+        },
       },
-      myInfo: { userId: 'test-user', displayName: 'Test User', color: '#FF6B6B' },
+      myInfo: {
+        userId: "test-user",
+        displayName: "Test User",
+        color: "#FF6B6B",
+      },
     });
 
     renderWithRouter(<SessionPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Other User')).toBeInTheDocument();
+      expect(screen.getByText("Other User")).toBeInTheDocument();
     });
-    expect(screen.getByText('O')).toBeInTheDocument();
+    expect(screen.getByText("O")).toBeInTheDocument();
   });
 
-  it('should display current participant name in top right', async () => {
+  it("should display current participant name in top right", async () => {
     api.getSession.mockResolvedValue(mockSession);
     useWebSocket.mockReturnValue({
       isConnected: true,
@@ -190,199 +209,218 @@ describe('SessionPage', () => {
       sendCursorPosition: mockSendCursorPosition,
       sendSelection: mockSendSelection,
       participants: {},
-      myInfo: { userId: 'test-user', displayName: 'Alice', color: '#FF6B6B' },
+      myInfo: { userId: "test-user", displayName: "Alice", color: "#FF6B6B" },
     });
 
     renderWithRouter(<SessionPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Alice')).toBeInTheDocument();
+      expect(screen.getByText("Alice")).toBeInTheDocument();
     });
     // Check for avatar with first letter
-    const avatars = screen.getAllByText('A');
+    const avatars = screen.getAllByText("A");
     expect(avatars.length).toBeGreaterThan(0);
   });
 
-  it('should allow changing language', async () => {
+  it("should allow changing language", async () => {
     api.getSession.mockResolvedValue(mockSession);
 
     renderWithRouter(<SessionPage />);
 
     await waitFor(() => {
-      expect(screen.getByRole('combobox')).toBeInTheDocument();
+      expect(screen.getByRole("combobox")).toBeInTheDocument();
     });
-    const languageSelect = screen.getByRole('combobox');
-    expect(languageSelect.value).toBe('python');
-    fireEvent.change(languageSelect, { target: { value: 'javascript' } });
+    const languageSelect = screen.getByRole("combobox");
+    expect(languageSelect.value).toBe("python");
+    fireEvent.change(languageSelect, { target: { value: "javascript" } });
 
     expect(mockSendMessage).toHaveBeenCalledWith({
-      type: 'language_change',
-      language: 'javascript',
+      type: "language_change",
+      language: "javascript",
     });
   });
 
-  it('should handle code changes', async () => {
+  it("should handle code changes", async () => {
     api.getSession.mockResolvedValue(mockSession);
     jest.useFakeTimers();
 
     renderWithRouter(<SessionPage />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('monaco-editor')).toBeInTheDocument();
+      expect(screen.getByTestId("monaco-editor")).toBeInTheDocument();
     });
-    const editor = screen.getByTestId('monaco-editor');
-    fireEvent.change(editor, { target: { value: 'new code' } });
+    const editor = screen.getByTestId("monaco-editor");
+    fireEvent.change(editor, { target: { value: "new code" } });
 
     jest.advanceTimersByTime(300);
 
     expect(mockSendMessage).toHaveBeenCalledWith({
-      type: 'code_change',
-      code: 'new code',
-      language: 'python',
+      type: "code_change",
+      code: "new code",
+      language: "python",
     });
 
     jest.useRealTimers();
   });
 
-  it('should render CodeExecutor component', async () => {
+  it("should render CodeExecutor component", async () => {
     api.getSession.mockResolvedValue(mockSession);
 
     renderWithRouter(<SessionPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Code Output')).toBeInTheDocument();
+      expect(screen.getByText("Code Output")).toBeInTheDocument();
     });
   });
 
-  describe('AI Assistant', () => {
-    it('should render AI assistant panel', async () => {
+  describe("AI Assistant", () => {
+    it("should render AI assistant panel", async () => {
       api.getSession.mockResolvedValue(mockSession);
 
       renderWithRouter(<SessionPage />);
 
       await waitFor(() => {
-        expect(screen.getByPlaceholderText(/Ask AI to generate/i)).toBeInTheDocument();
+        expect(
+          screen.getByPlaceholderText(/Ask AI to generate/i),
+        ).toBeInTheDocument();
       });
-      expect(screen.getByText('Generate')).toBeInTheDocument();
+      expect(screen.getByText("Generate")).toBeInTheDocument();
     });
 
-    it('should allow entering AI prompt', async () => {
+    it("should allow entering AI prompt", async () => {
       api.getSession.mockResolvedValue(mockSession);
 
       renderWithRouter(<SessionPage />);
 
       await waitFor(() => {
-        expect(screen.getByPlaceholderText(/Ask AI to generate/i)).toBeInTheDocument();
+        expect(
+          screen.getByPlaceholderText(/Ask AI to generate/i),
+        ).toBeInTheDocument();
       });
 
       const promptInput = screen.getByPlaceholderText(/Ask AI to generate/i);
-      fireEvent.change(promptInput, { target: { value: 'Create a hello function' } });
+      fireEvent.change(promptInput, {
+        target: { value: "Create a hello function" },
+      });
 
-      expect(promptInput.value).toBe('Create a hello function');
+      expect(promptInput.value).toBe("Create a hello function");
     });
 
-    it('should disable generate button when prompt is empty', async () => {
+    it("should disable generate button when prompt is empty", async () => {
       api.getSession.mockResolvedValue(mockSession);
 
       renderWithRouter(<SessionPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('Generate')).toBeInTheDocument();
+        expect(screen.getByText("Generate")).toBeInTheDocument();
       });
 
-      const generateButton = screen.getByText('Generate');
+      const generateButton = screen.getByText("Generate");
       expect(generateButton).toBeDisabled();
     });
 
-    it('should enable generate button when prompt has content', async () => {
+    it("should enable generate button when prompt has content", async () => {
       api.getSession.mockResolvedValue(mockSession);
 
       renderWithRouter(<SessionPage />);
 
       await waitFor(() => {
-        expect(screen.getByPlaceholderText(/Ask AI to generate/i)).toBeInTheDocument();
+        expect(
+          screen.getByPlaceholderText(/Ask AI to generate/i),
+        ).toBeInTheDocument();
       });
 
       const promptInput = screen.getByPlaceholderText(/Ask AI to generate/i);
-      fireEvent.change(promptInput, { target: { value: 'Create something' } });
+      fireEvent.change(promptInput, { target: { value: "Create something" } });
 
-      const generateButton = screen.getByText('Generate');
+      const generateButton = screen.getByText("Generate");
       expect(generateButton).not.toBeDisabled();
     });
 
-    it('should call generateCode API when clicking Generate', async () => {
+    it("should call generateCode API when clicking Generate", async () => {
       api.getSession.mockResolvedValue(mockSession);
       api.generateCode = jest.fn().mockResolvedValue({
         code: 'def hello():\n    print("Hello")',
-        error: '',
+        error: "",
       });
 
       renderWithRouter(<SessionPage />);
 
       await waitFor(() => {
-        expect(screen.getByPlaceholderText(/Ask AI to generate/i)).toBeInTheDocument();
+        expect(
+          screen.getByPlaceholderText(/Ask AI to generate/i),
+        ).toBeInTheDocument();
       });
 
       const promptInput = screen.getByPlaceholderText(/Ask AI to generate/i);
-      fireEvent.change(promptInput, { target: { value: 'Create a hello function' } });
+      fireEvent.change(promptInput, {
+        target: { value: "Create a hello function" },
+      });
 
-      const generateButton = screen.getByText('Generate');
+      const generateButton = screen.getByText("Generate");
       fireEvent.click(generateButton);
 
       await waitFor(() => {
         expect(api.generateCode).toHaveBeenCalledWith(
-          'Create a hello function',
+          "Create a hello function",
           'print("hello")',
-          'python'
+          "python",
         );
       });
     });
 
-    it('should show loading state during generation', async () => {
+    it("should show loading state during generation", async () => {
       api.getSession.mockResolvedValue(mockSession);
-      api.generateCode = jest.fn().mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve({ code: 'test', error: '' }), 100))
-      );
+      api.generateCode = jest
+        .fn()
+        .mockImplementation(
+          () =>
+            new Promise((resolve) =>
+              setTimeout(() => resolve({ code: "test", error: "" }), 100),
+            ),
+        );
 
       renderWithRouter(<SessionPage />);
 
       await waitFor(() => {
-        expect(screen.getByPlaceholderText(/Ask AI to generate/i)).toBeInTheDocument();
+        expect(
+          screen.getByPlaceholderText(/Ask AI to generate/i),
+        ).toBeInTheDocument();
       });
 
       const promptInput = screen.getByPlaceholderText(/Ask AI to generate/i);
-      fireEvent.change(promptInput, { target: { value: 'Create something' } });
+      fireEvent.change(promptInput, { target: { value: "Create something" } });
 
-      const generateButton = screen.getByText('Generate');
+      const generateButton = screen.getByText("Generate");
       fireEvent.click(generateButton);
 
-      expect(screen.getByText('Generating...')).toBeInTheDocument();
+      expect(screen.getByText("Generating...")).toBeInTheDocument();
     });
 
-    it('should display AI error message', async () => {
+    it("should display AI error message", async () => {
       api.getSession.mockResolvedValue(mockSession);
       api.generateCode = jest.fn().mockResolvedValue({
-        code: '',
-        error: 'AI service unavailable',
+        code: "",
+        error: "AI service unavailable",
       });
 
       renderWithRouter(<SessionPage />);
 
       await waitFor(() => {
-        expect(screen.getByPlaceholderText(/Ask AI to generate/i)).toBeInTheDocument();
+        expect(
+          screen.getByPlaceholderText(/Ask AI to generate/i),
+        ).toBeInTheDocument();
       });
 
       const promptInput = screen.getByPlaceholderText(/Ask AI to generate/i);
-      fireEvent.change(promptInput, { target: { value: 'Create something' } });
+      fireEvent.change(promptInput, { target: { value: "Create something" } });
 
-      const generateButton = screen.getByText('Generate');
+      const generateButton = screen.getByText("Generate");
       fireEvent.click(generateButton);
 
       await waitFor(() => {
-        expect(screen.getByText('AI service unavailable')).toBeInTheDocument();
+        expect(screen.getByText("AI service unavailable")).toBeInTheDocument();
       });
     });
   });
 });
-
-

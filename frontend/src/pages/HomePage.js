@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { createSession } from '../services/api';
-import { LANGUAGE_OPTIONS } from '../constants/languages';
-import './HomePage.css';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { createSession } from "../services/api";
+import { LANGUAGE_OPTIONS } from "../constants/languages";
+import "./HomePage.css";
 
 const HomePage = () => {
-  const [title, setTitle] = useState('');
-  const [language, setLanguage] = useState('python');
+  const [title, setTitle] = useState("");
+  const [language, setLanguage] = useState("python");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ const HomePage = () => {
       const session = await createSession(title || undefined, language);
       navigate(`/session/${session.session_code}`);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to create session');
+      setError(err.response?.data?.detail || "Failed to create session");
       setLoading(false);
     }
   };
@@ -63,7 +63,7 @@ const HomePage = () => {
           {error && <div className="error-message">{error}</div>}
 
           <button type="submit" disabled={loading} className="create-button">
-            {loading ? 'Creating...' : 'Create Session'}
+            {loading ? "Creating..." : "Create Session"}
           </button>
         </form>
 
@@ -82,4 +82,3 @@ const HomePage = () => {
 };
 
 export default HomePage;
-

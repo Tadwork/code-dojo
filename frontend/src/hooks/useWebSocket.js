@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { getParticipantInfo } from '../utils/participantUtils';
+import { useEffect, useRef, useState, useCallback } from "react";
+import { getParticipantInfo } from "../utils/participantUtils";
 
-const stripTrailingSlash = (value) => (value || '').replace(/\/$/, '');
+const stripTrailingSlash = (value) => (value || "").replace(/\/$/, "");
 const API_URL = stripTrailingSlash(process.env.REACT_APP_API_URL);
 const WS_URL = stripTrailingSlash(process.env.REACT_APP_WS_URL);
 
@@ -21,18 +21,22 @@ const resolveWsBase = () => {
 
   // Prefer explicit WS override when it makes sense for the current host
   if (wsCustom) {
-    const protocol = ['https:', 'wss:'].includes(wsCustom.protocol) ? 'wss:' : 'ws:';
+    const protocol = ["https:", "wss:"].includes(wsCustom.protocol)
+      ? "wss:"
+      : "ws:";
     return `${protocol}//${wsCustom.host}`;
   }
 
   // Next prefer API URL
   if (apiCustom) {
-    const protocol = ['https:', 'wss:'].includes(apiCustom.protocol) ? 'wss:' : 'ws:';
+    const protocol = ["https:", "wss:"].includes(apiCustom.protocol)
+      ? "wss:"
+      : "ws:";
     return `${protocol}//${apiCustom.host}`;
   }
 
   // Fallback to current origin
-  const protocol = current.protocol === 'https:' ? 'wss:' : 'ws:';
+  const protocol = current.protocol === "https:" ? "wss:" : "ws:";
   return `${protocol}//${current.host}`;
 };
 
@@ -60,61 +64,67 @@ const useWebSocket = (sessionCode, onMessage) => {
   }, [onMessage]);
 
   // Handle incoming WebSocket messages
-  const handleMessage = useCallback((message) => {
-    switch (message.type) {
-      case 'welcome':
-        setMyInfo({
-          userId: message.userId,
-          displayName: message.displayName,
-          color: message.color,
-        });
-        const participantsMap = (message.participants || []).reduce((acc, participant) => {
-          acc[participant.userId] = participant;
-          return acc;
-        }, {});
-        setParticipants(participantsMap);
-        break;
+  const handleMessage = useCallback(
+    (message) => {
+      switch (message.type) {
+        case "welcome":
+          setMyInfo({
+            userId: message.userId,
+            displayName: message.displayName,
+            color: message.color,
+          });
+          const participantsMap = (message.participants || []).reduce(
+            (acc, participant) => {
+              acc[participant.userId] = participant;
+              return acc;
+            },
+            {},
+          );
+          setParticipants(participantsMap);
+          break;
 
-      case 'participant_join':
-        updateParticipant(message.userId, () => ({
-          userId: message.userId,
-          displayName: message.displayName,
-          color: message.color,
-        }));
-        break;
+        case "participant_join":
+          updateParticipant(message.userId, () => ({
+            userId: message.userId,
+            displayName: message.displayName,
+            color: message.color,
+          }));
+          break;
 
-      case 'participant_leave':
-        setParticipants((prev) => {
-          const updated = { ...prev };
-          delete updated[message.userId];
-          return updated;
-        });
-        break;
+        case "participant_leave":
+          setParticipants((prev) => {
+            const updated = { ...prev };
+            delete updated[message.userId];
+            return updated;
+          });
+          break;
 
-      case 'cursor_update':
-        updateParticipant(message.userId, (participant) => ({
-          ...participant,
-          cursor: message.position,
-        }));
-        break;
+        case "cursor_update":
+          updateParticipant(message.userId, (participant) => ({
+            ...participant,
+            cursor: message.position,
+          }));
+          break;
 
-      case 'selection_update':
-        updateParticipant(message.userId, (participant) => ({
-          ...participant,
-          selection: message.selection,
-        }));
-        break;
+        case "selection_update":
+          updateParticipant(message.userId, (participant) => ({
+            ...participant,
+            selection: message.selection,
+          }));
+          break;
 
-      default:
-        // Pass other messages to the handler
-        break;
-    }
+        default:
+          // Pass other messages to the handler
+          break;
+      }
 
-    // Always pass to external handler
-    if (messageHandlerRef.current) {
-      messageHandlerRef.current(message);
-    }
-  }, [updateParticipant]);
+      // Always pass to external handler
+      if (messageHandlerRef.current) {
+        messageHandlerRef.current(message);
+      }
+    },
+    [updateParticipant],
+  );
 
   useEffect(() => {
     const wsUrl = `${resolveWsBase()}/ws/${sessionCode}`;
@@ -129,10 +139,10 @@ const useWebSocket = (sessionCode, onMessage) => {
           // Send join message immediately after connection
           ws.send(
             JSON.stringify({
-              type: 'join',
+              type: "join",
               userId: participantInfo.userId,
               displayName: participantInfo.displayName,
-            })
+            }),
           );
           setIsConnected(true);
           if (reconnectTimeoutRef.current) {
@@ -173,7 +183,7 @@ const useWebSocket = (sessionCode, onMessage) => {
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
-      if (wsRef.current && typeof wsRef.current.close === 'function') {
+      if (wsRef.current && typeof wsRef.current.close === "function") {
         wsRef.current.close();
       }
     };
@@ -189,22 +199,22 @@ const useWebSocket = (sessionCode, onMessage) => {
   const sendCursorPosition = useCallback(
     (position) => {
       sendMessage({
-        type: 'cursor_position',
+        type: "cursor_position",
         position,
       });
     },
-    [sendMessage]
+    [sendMessage],
   );
 
   // Send selection update
   const sendSelection = useCallback(
     (selection) => {
       sendMessage({
-        type: 'selection_change',
+        type: "selection_change",
         selection,
       });
     },
-    [sendMessage]
+    [sendMessage],
   );
 
   return {
@@ -218,5 +228,3 @@ const useWebSocket = (sessionCode, onMessage) => {
 };
 
 export default useWebSocket;
-
-

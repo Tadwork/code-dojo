@@ -1,8 +1,8 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import HomePage from './pages/HomePage';
-import SessionPage from './pages/SessionPage';
-import './App.css';
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import HomePage from "./pages/HomePage";
+import SessionPage from "./pages/SessionPage";
+import "./App.css";
 
 const ROUTER_FUTURE_FLAGS = {
   v7_startTransition: true,
@@ -29,4 +29,3 @@ function App() {
 }
 
 export default App;
-

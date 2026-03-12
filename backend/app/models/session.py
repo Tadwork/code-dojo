@@ -28,6 +28,15 @@ class Session(Base):
     )
     active_users: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
+    def __init__(self, **kwargs: object) -> None:
+        """Apply Python-side defaults so fresh instances match persisted behavior."""
+        kwargs.setdefault("language", "python")
+        kwargs.setdefault("code", "")
+        kwargs.setdefault("active_users", 0)
+        kwargs.setdefault("created_at", datetime.utcnow())
+        kwargs.setdefault("updated_at", datetime.utcnow())
+        super().__init__(**kwargs)
+
     def __repr__(self) -> str:
         """String representation."""
         return f"<Session {self.session_code}>"
