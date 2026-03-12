@@ -51,4 +51,3 @@ class TestSettings:
         """Test that settings is a singleton instance."""
         assert settings is not None
         assert isinstance(settings, Settings)
-

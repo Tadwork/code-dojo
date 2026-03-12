@@ -148,7 +148,9 @@ class ConnectionManager:
         """Get all participants in a session as serializable dicts."""
         if session_code not in self.participants:
             return []
-        return [participant.to_payload() for participant in self.participants[session_code].values()]
+        return [
+            participant.to_payload() for participant in self.participants[session_code].values()
+        ]
 
     def update_cursor(self, websocket: WebSocket, cursor: Dict[str, int]) -> Optional[Participant]:
         """Update a participant's cursor position."""
@@ -276,7 +278,9 @@ async def broadcast_participant_join(session_code: str, participant: Participant
     )
 
 
-async def broadcast_participant_leave(session_code: str, participant: Optional[Participant]) -> None:
+async def broadcast_participant_leave(
+    session_code: str, participant: Optional[Participant]
+) -> None:
     """Notify remaining clients that a participant left."""
     if not participant:
         return
@@ -299,7 +303,9 @@ def validate_position(position: Any) -> None:
         raise ValueError("position must be a dictionary")
     if not all(key in position for key in ["lineNumber", "column"]):
         raise ValueError("position must contain lineNumber and column")
-    if not all(isinstance(position[key], int) and position[key] > 0 for key in ["lineNumber", "column"]):
+    if not all(
+        isinstance(position[key], int) and position[key] > 0 for key in ["lineNumber", "column"]
+    ):
         raise ValueError("lineNumber and column must be positive integers")
 
 

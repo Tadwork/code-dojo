@@ -27,6 +27,7 @@ class TestSupportedLanguages:
         """Test that JavaScript is supported."""
         assert "javascript" in SUPPORTED_LANGUAGES
 
+
 class TestEnsureExecutionServiceReady:
     """Tests for ensure_execution_service_ready."""
 
@@ -62,9 +63,12 @@ class TestExecuteSource:
         mock_sandbox = AsyncMock()
         mock_sandbox.run_code.return_value = mock_execution
 
-        with patch("app.services.code_execution.settings.e2b_api_key", "test-key"), patch(
-            "app.services.code_execution.AsyncSandbox.create",
-            new=AsyncMock(return_value=mock_sandbox),
+        with (
+            patch("app.services.code_execution.settings.e2b_api_key", "test-key"),
+            patch(
+                "app.services.code_execution.AsyncSandbox.create",
+                new=AsyncMock(return_value=mock_sandbox),
+            ),
         ):
             result = await execute_source("python", "print('Hello')")
 
@@ -84,9 +88,12 @@ class TestExecuteSource:
         mock_sandbox = AsyncMock()
         mock_sandbox.run_code.return_value = mock_execution
 
-        with patch("app.services.code_execution.settings.e2b_api_key", "test-key"), patch(
-            "app.services.code_execution.AsyncSandbox.create",
-            new=AsyncMock(return_value=mock_sandbox),
+        with (
+            patch("app.services.code_execution.settings.e2b_api_key", "test-key"),
+            patch(
+                "app.services.code_execution.AsyncSandbox.create",
+                new=AsyncMock(return_value=mock_sandbox),
+            ),
         ):
             result = await execute_source("python", "raise Exception()")
 
@@ -103,9 +110,12 @@ class TestExecuteSource:
         mock_sandbox = AsyncMock()
         mock_sandbox.run_code.return_value = mock_execution
 
-        with patch("app.services.code_execution.settings.e2b_api_key", "test-key"), patch(
-            "app.services.code_execution.AsyncSandbox.create",
-            new=AsyncMock(return_value=mock_sandbox),
+        with (
+            patch("app.services.code_execution.settings.e2b_api_key", "test-key"),
+            patch(
+                "app.services.code_execution.AsyncSandbox.create",
+                new=AsyncMock(return_value=mock_sandbox),
+            ),
         ):
             result = await execute_source("python", "1 + 1")
 
@@ -126,9 +136,12 @@ class TestExecuteSource:
         mock_sandbox = AsyncMock()
         mock_sandbox.run_code.return_value = mock_execution
 
-        with patch("app.services.code_execution.settings.e2b_api_key", "test-key"), patch(
-            "app.services.code_execution.AsyncSandbox.create",
-            new=AsyncMock(return_value=mock_sandbox),
+        with (
+            patch("app.services.code_execution.settings.e2b_api_key", "test-key"),
+            patch(
+                "app.services.code_execution.AsyncSandbox.create",
+                new=AsyncMock(return_value=mock_sandbox),
+            ),
         ):
             result = await execute_source("python", "print('test')")
 
@@ -148,9 +161,12 @@ class TestExecuteSource:
         mock_sandbox = AsyncMock()
         mock_sandbox.run_code.side_effect = Exception("Unexpected error")
 
-        with patch("app.services.code_execution.settings.e2b_api_key", "test-key"), patch(
-            "app.services.code_execution.AsyncSandbox.create",
-            new=AsyncMock(return_value=mock_sandbox),
+        with (
+            patch("app.services.code_execution.settings.e2b_api_key", "test-key"),
+            patch(
+                "app.services.code_execution.AsyncSandbox.create",
+                new=AsyncMock(return_value=mock_sandbox),
+            ),
         ):
             result = await execute_source("python", "print('test')")
 
@@ -168,9 +184,12 @@ class TestExecuteSource:
         mock_sandbox = AsyncMock()
         mock_sandbox.run_code.return_value = mock_execution
 
-        with patch("app.services.code_execution.settings.e2b_api_key", "test-key"), patch(
-            "app.services.code_execution.AsyncSandbox.create",
-            new=AsyncMock(return_value=mock_sandbox),
+        with (
+            patch("app.services.code_execution.settings.e2b_api_key", "test-key"),
+            patch(
+                "app.services.code_execution.AsyncSandbox.create",
+                new=AsyncMock(return_value=mock_sandbox),
+            ),
         ):
             await execute_source("javascript", "console.log('hello')")
 
